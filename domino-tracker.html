@@ -94,30 +94,49 @@
       z-index: 110;
     }
 
-    .top-nav {
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    .topbar-left {
+      position: relative;
       flex-shrink: 0;
     }
 
+    .top-nav {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      flex-direction: column;
+      align-items: stretch;
+      min-width: 168px;
+      background: rgba(14, 14, 22, 0.97);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 6px;
+      box-shadow: var(--shadow-md);
+      z-index: 120;
+      gap: 2px;
+    }
+
+    .top-nav.open { display: flex; }
+
     .nav-item {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      justify-content: center;
-      gap: 2px;
-      min-width: 52px;
-      height: 44px;
-      padding: 4px 8px;
+      justify-content: flex-start;
+      gap: 10px;
+      width: 100%;
+      min-width: 0;
+      height: auto;
+      padding: 12px 14px;
       border: 1px solid transparent;
       border-radius: var(--radius-xs);
       background: transparent;
       color: var(--text-muted);
       font-family: inherit;
-      font-size: 0.625rem;
+      font-size: 0.875rem;
       font-weight: 600;
-      letter-spacing: 0.02em;
       cursor: pointer;
       transition: all var(--transition);
     }
@@ -125,7 +144,8 @@
     .nav-item .nav-icon {
       font-size: 1.125rem;
       line-height: 1;
-      transition: transform var(--transition);
+      width: 1.25rem;
+      text-align: center;
     }
 
     .nav-item.active {
@@ -134,8 +154,7 @@
       border-color: rgba(139, 92, 246, 0.25);
     }
 
-    .nav-item:active { transform: scale(0.94); }
-    .nav-item.active .nav-icon { transform: scale(1.08); }
+    .nav-item:active { transform: scale(0.98); }
 
     .topbar-brand {
       display: flex;
@@ -269,6 +288,8 @@
     .players-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 
     .score-column {
+      position: relative;
+      overflow: hidden;
       background: var(--surface);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
@@ -281,6 +302,154 @@
       display: flex;
       flex-direction: column;
       box-shadow: var(--shadow-sm);
+    }
+
+    /* Efectos: sumar, quitar, ganar */
+    .score-column.fx-add {
+      animation: fxColGlowAdd 0.55s ease;
+    }
+
+    .score-column.fx-remove {
+      animation: fxColShake 0.45s ease;
+    }
+
+    .score-column.fx-win {
+      animation: fxColWin 1.2s ease 2;
+      z-index: 2;
+    }
+
+    .score-col-total.fx-pop {
+      animation: fxScorePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .score-col-total.fx-shrink {
+      animation: fxScoreShrink 0.45s ease;
+    }
+
+    .score-col-total.fx-win-pulse {
+      animation: fxWinTotal 0.8s ease 3;
+    }
+
+    .score-line.fx-new {
+      animation: fxLineIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .progress-fill.fx-grow {
+      animation: fxBarGrow 0.5s ease;
+    }
+
+    .fx-float {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      transform: translateX(-50%);
+      font-size: 1.75rem;
+      font-weight: 800;
+      pointer-events: none;
+      z-index: 5;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .fx-float-up {
+      color: var(--cyan);
+      animation: fxFloatUp 0.7s ease forwards;
+    }
+
+    .fx-float-down {
+      color: var(--danger);
+      animation: fxFloatDown 0.65s ease forwards;
+    }
+
+    #fx-flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 199;
+      opacity: 0;
+    }
+
+    #fx-flash.fx-win-flash {
+      animation: fxWinFlash 0.9s ease forwards;
+    }
+
+    .modal-emoji.fx-modal-celebrate {
+      animation: fxModalEmoji 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .btn.fx-dock-pulse {
+      animation: fxDockPulse 0.4s ease;
+    }
+
+    @keyframes fxColGlowAdd {
+      0%, 100% { box-shadow: var(--shadow-sm); border-color: var(--border); }
+      45% { box-shadow: 0 0 32px rgba(6, 182, 212, 0.45); border-color: var(--cyan); }
+    }
+
+    @keyframes fxColShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
+
+    @keyframes fxColWin {
+      0%, 100% { box-shadow: 0 0 24px rgba(139, 92, 246, 0.35); transform: scale(1); }
+      50% { box-shadow: 0 0 48px rgba(251, 191, 36, 0.55); transform: scale(1.03); border-color: rgba(251, 191, 36, 0.6); }
+    }
+
+    @keyframes fxScorePop {
+      0% { transform: scale(1); filter: brightness(1); }
+      45% { transform: scale(1.18); filter: brightness(1.3); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    @keyframes fxScoreShrink {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.88); filter: brightness(0.85); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes fxWinTotal {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.12); filter: brightness(1.25); }
+    }
+
+    @keyframes fxLineIn {
+      from { opacity: 0; transform: translateY(-14px) scale(0.8); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes fxBarGrow {
+      from { filter: brightness(1.4); }
+      to { filter: brightness(1); }
+    }
+
+    @keyframes fxFloatUp {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.85); }
+      100% { opacity: 0; transform: translate(-50%, -48px) scale(1.15); }
+    }
+
+    @keyframes fxFloatDown {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, 36px) scale(0.75); }
+    }
+
+    @keyframes fxWinFlash {
+      0% { opacity: 0; background: radial-gradient(circle at 50% 40%, rgba(139, 92, 246, 0.5), transparent 65%); }
+      35% { opacity: 1; }
+      100% { opacity: 0; background: radial-gradient(circle at 50% 40%, rgba(251, 191, 36, 0.25), transparent 70%); }
+    }
+
+    @keyframes fxModalEmoji {
+      0% { transform: scale(0.3) rotate(-12deg); opacity: 0; }
+      60% { transform: scale(1.15) rotate(6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    @keyframes fxDockPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); box-shadow: 0 0 20px rgba(124, 58, 237, 0.5); }
     }
 
     .score-column.selected {
@@ -997,20 +1166,23 @@
   <div id="env-banner" class="env-banner" role="alert"></div>
   <div id="app">
     <header class="app-topbar">
-      <nav class="top-nav" id="bottom-nav">
-        <button class="nav-item active" data-tab="game" type="button">
-          <span class="nav-icon">🎲</span>
-          <span>Juego</span>
-        </button>
-        <button class="nav-item" data-tab="history" type="button">
-          <span class="nav-icon">📋</span>
-          <span>Historial</span>
-        </button>
-        <button class="nav-item" data-tab="config" type="button">
-          <span class="nav-icon">⚙️</span>
-          <span>Config</span>
-        </button>
-      </nav>
+      <div class="topbar-left">
+        <button type="button" class="btn-icon" id="nav-menu-btn" aria-label="Menú">⋮</button>
+        <nav class="top-nav" id="bottom-nav">
+          <button class="nav-item active" data-tab="game" type="button">
+            <span class="nav-icon">🎲</span>
+            <span>Juego</span>
+          </button>
+          <button class="nav-item" data-tab="history" type="button">
+            <span class="nav-icon">📋</span>
+            <span>Historial</span>
+          </button>
+          <button class="nav-item" data-tab="config" type="button">
+            <span class="nav-icon">⚙️</span>
+            <span>Config</span>
+          </button>
+        </nav>
+      </div>
       <div class="topbar-brand">
         <span class="brand-icon">🁫</span>
         <span class="brand-text">Dominó</span>
@@ -1023,6 +1195,8 @@
     </div>
     <div id="global-toast" class="global-toast" aria-live="polite"></div>
   </div>
+
+  <div id="fx-flash" aria-hidden="true"></div>
 
   <div id="victory-modal" class="modal-overlay">
     <div class="modal">
@@ -1041,7 +1215,8 @@
     /* Persistencia: configuración, partida activa, apuntes e historial en localStorage */
     const STORAGE_KEY = 'domino-tracker-v1';
     const EMOJIS = ['🦁', '🐯', '🦊', '🐺', '🦅', '🦋', '🐉', '🦄', '🔥', '⚡', '🌊', '🏆', '👑', '💎', '🎯', '🚀', '🎲', '🃏', '🎮', '🎸'];
-    const DEFAULT_QUICK = [5, 10, 15, 20, 25, 30];
+    const DEFAULT_QUICK = [5, 10, 15, 20, 25];
+    const MAX_QUICK = 5;
     const DEFAULT_TARGET = 100;
     const TARGET_PRESETS = [50, 100, 150, 200, 300];
 
@@ -1051,6 +1226,8 @@
     let setupDraft = null;
     let configDraft = null;
     let menuOpen = false;
+    let navMenuOpen = false;
+    let pendingFx = null;
 
     const Sound = {
       ctx: null,
@@ -1302,9 +1479,10 @@
         players.push({ name: `Jugador ${i + 1}`, emoji: EMOJIS[i % EMOJIS.length] });
       }
 
-      const quickValues = Array.isArray(s.quickValues) && s.quickValues.length
+      const quickValues = (Array.isArray(s.quickValues) && s.quickValues.length
         ? [...s.quickValues].sort((a, b) => a - b)
-        : [...DEFAULT_QUICK];
+        : [...DEFAULT_QUICK]
+      ).slice(0, MAX_QUICK);
 
       return {
         playerCount: count,
@@ -1586,6 +1764,9 @@
 
       saveState();
       const won = checkVictory();
+      pendingFx = won
+        ? { type: 'win', playerId: game.winnerId }
+        : { type: 'add', playerId, entryId: entry.id, points };
       if (!won) Sound.addPoints();
       render();
     }
@@ -1612,6 +1793,7 @@
 
       game.round = Math.max(1, game.round - 1);
       unfinishGameIfNeeded(game);
+      pendingFx = { type: 'remove', playerId: last.playerId, points: last.points };
       Sound.removePoints();
       saveState();
       render();
@@ -1630,6 +1812,7 @@
       game.history = game.history.filter(h => h.id !== entry.id);
       removeEntryFromUndo(game, entry);
       unfinishGameIfNeeded(game);
+      pendingFx = { type: 'remove', playerId: entry.playerId, points: entry.points };
       Sound.removePoints();
       saveState();
       render();
@@ -1670,12 +1853,53 @@
 
     function showVictoryModal(winner, playSound) {
       if (playSound !== false) Sound.victory();
+      triggerWinFlash();
       const modal = document.getElementById('victory-modal');
-      document.getElementById('modal-emoji').textContent = winner.emoji;
+      const emojiEl = document.getElementById('modal-emoji');
+      emojiEl.textContent = winner.emoji;
+      emojiEl.classList.remove('fx-modal-celebrate');
+      void emojiEl.offsetWidth;
+      emojiEl.classList.add('fx-modal-celebrate');
       document.getElementById('modal-title').textContent = `¡${winner.name} gana!`;
       document.getElementById('modal-sub').textContent = `${winner.score} puntos — meta alcanzada`;
       spawnConfetti();
       modal.classList.add('open');
+    }
+
+    function triggerWinFlash() {
+      const flash = document.getElementById('fx-flash');
+      if (!flash) return;
+      flash.classList.remove('fx-win-flash');
+      void flash.offsetWidth;
+      flash.classList.add('fx-win-flash');
+      flash.addEventListener('animationend', () => flash.classList.remove('fx-win-flash'), { once: true });
+    }
+
+    function spawnFxFloat(col, text, cls) {
+      const el = document.createElement('div');
+      el.className = `fx-float ${cls}`;
+      el.textContent = text;
+      col.appendChild(el);
+      el.addEventListener('animationend', () => el.remove(), { once: true });
+    }
+
+    function applyGameFx() {
+      if (!pendingFx || !state.activeGame) return;
+      const fx = pendingFx;
+      pendingFx = null;
+
+      requestAnimationFrame(() => {
+        const col = document.querySelector(`.score-column[data-id="${fx.playerId}"]`);
+        if (!col) return;
+
+        if (fx.type === 'add') {
+          spawnFxFloat(col, `+${fx.points}`, 'fx-float-up');
+          document.querySelector('[data-action="manual-add"]')?.classList.add('fx-dock-pulse');
+          setTimeout(() => document.querySelector('[data-action="manual-add"]')?.classList.remove('fx-dock-pulse'), 450);
+        } else if (fx.type === 'remove') {
+          spawnFxFloat(col, `−${fx.points}`, 'fx-float-down');
+        }
+      });
     }
 
     function hideVictoryModal() {
@@ -1759,6 +1983,19 @@
       });
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.getElementById('view-' + currentTab).classList.add('active');
+      document.getElementById('bottom-nav')?.classList.toggle('open', navMenuOpen);
+    }
+
+    function renderQuickAddRow(prefix, values, addAction) {
+      if (values.length >= MAX_QUICK) {
+        return `<p style="font-size:0.8125rem;color:var(--text-muted);margin-top:8px;">Máximo ${MAX_QUICK} apuntes</p>`;
+      }
+      const inputId = prefix === 'cfg' ? 'cfg-new-quick' : 'new-quick-value';
+      return `
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input type="number" class="form-input" id="${inputId}" placeholder="Valor" min="1" max="999">
+          <button type="button" class="btn btn-sm" data-action="${addAction}">+ Agregar</button>
+        </div>`;
     }
 
     function renderGameView() {
@@ -1767,6 +2004,7 @@
       if (state.activeGame && !setupDraft) {
         el.innerHTML = renderActiveGame();
         bindGameEvents();
+        applyGameFx();
       } else {
         if (!setupDraft) initSetupDraft();
         el.innerHTML = renderSetup();
@@ -1810,17 +2048,14 @@
         </div>
 
         <div class="card">
-          <div class="card-title">Apuntes rápidos</div>
+          <div class="card-title">Apuntes rápidos (máx. ${MAX_QUICK})</div>
           ${d.quickValues.map((v, i) => `
             <div class="quick-value-row">
               <span>+${v}</span>
               <button type="button" class="btn-icon" data-action="remove-quick" data-index="${i}">×</button>
             </div>
           `).join('')}
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <input type="number" class="form-input" id="new-quick-value" placeholder="Valor" min="1" max="999">
-            <button type="button" class="btn btn-sm" data-action="add-quick">+ Agregar</button>
-          </div>
+          ${renderQuickAddRow('setup', d.quickValues, 'add-quick')}
         </div>
 
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
@@ -1834,6 +2069,7 @@
       const game = state.activeGame;
       const leader = getLeader(game.players);
       const cols = `cols-${game.players.length}`;
+      const fx = pendingFx;
 
       if (!selectedPlayerId) selectedPlayerId = game.players[0].id;
       const selectedPlayer = game.players.find(p => p.id === selectedPlayerId) || game.players[0];
@@ -1842,22 +2078,32 @@
         const pct = Math.min(100, (p.score / game.target) * 100);
         const isLeader = p.id === leader.id && p.score > 0;
         const isSelected = p.id === selectedPlayerId;
-        const lines = getPlayerLines(game, p.id).map(h =>
-          `<div class="score-line">
+        const isFxTarget = fx && fx.playerId === p.id;
+        let colFx = '';
+        let totalFx = '';
+        if (isFxTarget) {
+          if (fx.type === 'add') { colFx = ' fx-add'; totalFx = ' fx-pop'; }
+          else if (fx.type === 'remove') { colFx = ' fx-remove'; totalFx = ' fx-shrink'; }
+          else if (fx.type === 'win') { colFx = ' fx-win'; totalFx = ' fx-win-pulse'; }
+        }
+        const barFx = isFxTarget && fx.type === 'add' ? ' fx-grow' : '';
+        const lines = getPlayerLines(game, p.id).map(h => {
+          const lineFx = isFxTarget && fx.type === 'add' && fx.entryId === h.id ? ' fx-new' : '';
+          return `<div class="score-line${lineFx}">
             <span class="score-line-value">+${h.points}</span>
             <button type="button" class="score-line-delete" data-action="delete-line" data-id="${h.id}" aria-label="Eliminar">×</button>
-          </div>`
-        ).join('');
+          </div>`;
+        }).join('');
 
         return `
-          <div class="score-column ${isSelected ? 'selected' : ''} ${isLeader ? 'leading' : ''}" data-action="select-column" data-id="${p.id}">
+          <div class="score-column${colFx} ${isSelected ? 'selected' : ''} ${isLeader ? 'leading' : ''}" data-action="select-column" data-id="${p.id}">
             <div class="score-col-header">
               <span class="score-col-emoji">${p.emoji}</span>
               <span class="score-col-name">${escapeHtml(p.name)}</span>
             </div>
-            <div class="score-col-total">${p.score}</div>
+            <div class="score-col-total${totalFx}">${p.score}</div>
             <div class="progress-bar">
-              <div class="progress-fill" style="width:${pct}%"></div>
+              <div class="progress-fill${barFx}" style="width:${pct}%"></div>
             </div>
             <div class="score-lines">${lines}</div>
           </div>
@@ -1990,17 +2236,14 @@
         </div>
 
         <div class="card">
-          <div class="card-title">Apuntes rápidos</div>
+          <div class="card-title">Apuntes rápidos (máx. ${MAX_QUICK})</div>
           ${s.quickValues.map((v, i) => `
             <div class="quick-value-row">
               <span>+${v}</span>
               <button type="button" class="btn-icon" data-action="cfg-remove-quick" data-index="${i}">×</button>
             </div>
           `).join('')}
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <input type="number" class="form-input" id="cfg-new-quick" placeholder="Valor" min="1" max="999">
-            <button type="button" class="btn btn-sm" data-action="cfg-add-quick">+ Agregar</button>
-          </div>
+          ${renderQuickAddRow('cfg', s.quickValues, 'cfg-add-quick')}
         </div>
 
         <div class="config-save-bar">
@@ -2068,7 +2311,11 @@
         });
       });
 
-      el.querySelector('[data-action="add-quick"]').addEventListener('click', () => {
+      el.querySelector('[data-action="add-quick"]')?.addEventListener('click', () => {
+        if (setupDraft.quickValues.length >= MAX_QUICK) {
+          showToast(`Máximo ${MAX_QUICK} apuntes rápidos`);
+          return;
+        }
         const val = parseInt(document.getElementById('new-quick-value').value);
         if (val > 0 && !setupDraft.quickValues.includes(val)) {
           setupDraft.quickValues.push(val);
@@ -2213,6 +2460,10 @@
         }
 
         if (action === 'cfg-add-quick') {
+          if (configDraft.quickValues.length >= MAX_QUICK) {
+            showToast(`Máximo ${MAX_QUICK} apuntes rápidos`);
+            return;
+          }
           const val = parseInt(document.getElementById('cfg-new-quick')?.value, 10);
           if (val > 0 && !configDraft.quickValues.includes(val)) {
             configDraft.quickValues.push(val);
@@ -2246,16 +2497,27 @@
 
     /* ─── NAV & GLOBAL ─── */
 
+    document.getElementById('nav-menu-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      navMenuOpen = !navMenuOpen;
+      document.getElementById('bottom-nav')?.classList.toggle('open', navMenuOpen);
+    });
+
     document.getElementById('bottom-nav').addEventListener('click', e => {
       const btn = e.target.closest('.nav-item');
       if (!btn) return;
       currentTab = btn.dataset.tab;
       if (currentTab === 'config' && !configDraft) initConfigDraft();
+      navMenuOpen = false;
       menuOpen = false;
       render();
     });
 
     document.addEventListener('click', () => {
+      if (navMenuOpen) {
+        navMenuOpen = false;
+        document.getElementById('bottom-nav')?.classList.remove('open');
+      }
       if (menuOpen) {
         menuOpen = false;
         document.getElementById('game-menu')?.classList.remove('open');
