@@ -1,0 +1,2166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0A0A0F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dominó">
+  <meta name="description" content="Apuntes de dominó — PWA offline">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Dominó Tracker">
+  <meta property="og:description" content="Apuntes de dominó offline — guarda partidas en tu teléfono">
+  <meta property="og:locale" content="es">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <title>Dominó Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0A0F;
+      --surface: #13131A;
+      --surface-hover: #1A1A24;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #7C3AED;
+      --accent-glow: rgba(124, 58, 237, 0.35);
+      --cyan: #06B6D4;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --nav-height: 64px;
+      --transition: 200ms ease;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .view {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px;
+      padding-bottom: calc(var(--nav-height) + 16px);
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .view.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-meta {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--transition), background var(--transition);
+      flex-shrink: 0;
+    }
+
+    .btn-icon:active { transform: scale(0.96); }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Player cards grid */
+    .players-grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: start;
+    }
+
+    .players-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .players-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .players-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+    .score-column {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 8px;
+      min-height: 120px;
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .score-column.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .score-column.leading:not(.selected) {
+      border-color: rgba(124, 58, 237, 0.45);
+    }
+
+    .score-col-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      margin-bottom: 6px;
+    }
+
+    .score-col-emoji { font-size: 1.5rem; line-height: 1; }
+
+    .score-col-name {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .players-grid.cols-4 .score-col-name { font-size: 0.625rem; }
+
+    .score-col-total {
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 8px;
+    }
+
+    .players-grid.cols-3 .score-col-total { font-size: 36px; }
+    .players-grid.cols-4 .score-col-total { font-size: 28px; }
+
+    .score-column .progress-bar { margin-bottom: 10px; }
+
+    .score-lines {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 24px;
+    }
+
+    .score-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--cyan);
+      padding: 8px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .players-grid.cols-3 .score-line { font-size: 1.3125rem; }
+    .players-grid.cols-4 .score-line { font-size: 1.125rem; }
+
+    .score-line-value {
+      flex: 1;
+      text-align: center;
+    }
+
+    .score-line-delete {
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--danger);
+      border-radius: 8px;
+      font-size: 1.125rem;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: transform var(--transition), background var(--transition);
+    }
+
+    .score-line-delete:active {
+      transform: scale(0.96);
+      background: rgba(239, 68, 68, 0.28);
+    }
+
+    .score-line:last-child { border-bottom: none; }
+
+    .input-dock {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--nav-height) + var(--safe-bottom));
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      z-index: 90;
+    }
+
+    .dock-quick-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+      justify-content: center;
+    }
+
+    .dock-quick-btn {
+      min-width: 52px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform var(--transition), background var(--transition);
+    }
+
+    .dock-quick-btn:active {
+      transform: scale(0.96);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .dock-manual-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .dock-manual-row input {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 500;
+      outline: none;
+    }
+
+    .dock-manual-row input:focus { border-color: var(--accent); }
+
+    .dock-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dock-actions .btn { flex: 1; }
+
+    .dock-selected {
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .dock-selected strong { color: var(--text); }
+
+    #view-game.has-input-dock {
+      padding-bottom: calc(var(--nav-height) + 240px + var(--safe-bottom));
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 0;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform var(--transition), background var(--transition), border-color var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.96); }
+    .btn:hover { background: var(--surface-hover); }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: #6D28D9; }
+
+    .btn-danger {
+      background: transparent;
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .btn-success {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 0.8125rem;
+    }
+
+    .btn-block { width: 100%; }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn-group .btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Setup form */
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .form-input:focus { border-color: var(--accent); }
+
+    .player-setup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .player-setup input { flex: 1; min-width: 0; }
+
+    .emoji-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .emoji-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--border);
+      background: var(--bg);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .emoji-btn.selected {
+      border-color: var(--accent);
+      background: rgba(124, 58, 237, 0.2);
+    }
+
+    .emoji-btn:active { transform: scale(0.96); }
+
+    .emoji-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 1.5rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .quick-value-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .quick-value-row span {
+      flex: 1;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .quick-value-row .btn-icon {
+      width: 36px;
+      height: 36px;
+      font-size: 1rem;
+    }
+
+    /* History table */
+    .history-collapse {
+      margin-top: 12px;
+    }
+
+    .collapse-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: background var(--transition);
+    }
+
+    .collapse-header:active { transform: scale(0.98); }
+
+    .collapse-body {
+      display: none;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .collapse-body.open { display: block; }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+    }
+
+    .history-table th,
+    .history-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-table th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .history-table tr:last-child td { border-bottom: none; }
+
+    .history-table .pts { font-weight: 700; color: var(--cyan); }
+
+    /* Completed games list */
+    .game-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .game-item-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .game-item-winner {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .game-item-scores {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .game-item-delete {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--danger);
+      font-size: 1.125rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background var(--transition);
+    }
+
+    .game-item-delete:active { transform: scale(0.96); background: rgba(239, 68, 68, 0.1); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-card .stat-emoji { font-size: 1.5rem; }
+    .stat-card .stat-name { font-size: 0.8125rem; color: var(--text-muted); margin: 4px 0; }
+    .stat-card .stat-wins { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--nav-height) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color var(--transition);
+      padding: 8px;
+    }
+
+    .nav-item .nav-icon { font-size: 1.375rem; line-height: 1; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item:active { transform: scale(0.96); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 20px;
+      padding-top: calc(20px + var(--safe-top));
+      padding-bottom: calc(20px + var(--safe-bottom));
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      text-align: center;
+      max-width: 340px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-emoji { font-size: 4rem; margin-bottom: 8px; }
+    .modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .modal-sub { color: var(--text-muted); margin-bottom: 24px; font-size: 0.9375rem; }
+    .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Confetti */
+    .confetti-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      top: -10px;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+    }
+
+    /* Dropdown menu */
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      min-width: 180px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      z-index: 50;
+      display: none;
+      overflow: hidden;
+    }
+
+    .dropdown.open { display: block; }
+
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .dropdown-item:hover, .dropdown-item:active { background: var(--surface-hover); }
+    .dropdown-item.danger { color: var(--danger); }
+
+    .header-wrap { position: relative; }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    .danger-zone {
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .config-save-bar {
+      margin-bottom: 16px;
+    }
+
+    .config-toast {
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--success);
+      font-weight: 600;
+      margin-top: 10px;
+      min-height: 1.25rem;
+    }
+
+    .global-toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--nav-height) + 12px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(120%);
+      background: var(--success);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 600;
+      z-index: 150;
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .global-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .env-banner {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 300;
+      background: var(--warning);
+      color: #1a1a1a;
+      padding: calc(10px + var(--safe-top)) 14px 10px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.45;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .env-banner.show { display: block; }
+
+    .env-banner strong { display: block; margin-bottom: 4px; }
+
+    body.has-env-banner #app {
+      padding-top: calc(72px + var(--safe-top));
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="env-banner" class="env-banner" role="alert"></div>
+  <div id="app">
+    <div id="view-game" class="view active"></div>
+    <div id="view-history" class="view"></div>
+    <div id="view-config" class="view"></div>
+
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" data-tab="game">
+        <span class="nav-icon">🎲</span>
+        <span>Juego</span>
+      </button>
+      <button class="nav-item" data-tab="history">
+        <span class="nav-icon">📋</span>
+        <span>Historial</span>
+      </button>
+      <button class="nav-item" data-tab="config">
+        <span class="nav-icon">⚙️</span>
+        <span>Config</span>
+      </button>
+    </nav>
+    <div id="global-toast" class="global-toast" aria-live="polite"></div>
+  </div>
+
+  <div id="victory-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="confetti-container" id="confetti-container"></div>
+      <div class="modal-emoji" id="modal-emoji"></div>
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-sub" id="modal-sub"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-block" id="btn-revancha">Revancha</button>
+        <button class="btn btn-block" id="btn-nueva-partida">Nueva partida</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Persistencia: configuración, partida activa, apuntes e historial en localStorage */
+    const STORAGE_KEY = 'domino-tracker-v1';
+    const EMOJIS = ['🦁', '🐯', '🦊', '🐺', '🦅', '🦋', '🐉', '🦄', '🔥', '⚡', '🌊', '🏆', '👑', '💎', '🎯', '🚀', '🎲', '🃏', '🎮', '🎸'];
+    const DEFAULT_QUICK = [5, 10, 15, 20, 25, 30];
+    const DEFAULT_TARGET = 100;
+    const TARGET_PRESETS = [50, 100, 150, 200, 300];
+
+    let state = loadState();
+    let currentTab = 'game';
+    let selectedPlayerId = null;
+    let setupDraft = null;
+    let configDraft = null;
+    let menuOpen = false;
+
+    const Sound = {
+      ctx: null,
+      unlocked: false,
+
+      unlock() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        this.unlocked = true;
+      },
+
+      tone(freq, delay, duration, type, volume) {
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(volume || 0.14, t + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + duration + 0.04);
+      },
+
+      sweep(startFreq, endFreq, delay, duration, volume) {
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(startFreq, t);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, t + duration);
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(volume || 0.1, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + duration + 0.04);
+      },
+
+      selectTeam() {
+        this.unlock();
+        this.tone(880, 0, 0.06, 'sine', 0.08);
+        this.tone(1100, 0.03, 0.05, 'sine', 0.05);
+      },
+
+      addPoints() {
+        this.unlock();
+        this.tone(520, 0, 0.08, 'sine', 0.13);
+        this.tone(780, 0.04, 0.1, 'sine', 0.1);
+      },
+
+      removePoints() {
+        this.unlock();
+        this.sweep(420, 180, 0, 0.14, 0.11);
+      },
+
+      victory() {
+        this.unlock();
+        [523, 659, 784, 988, 1175].forEach((f, i) => {
+          this.tone(f, i * 0.13, 0.28, 'sine', 0.12);
+        });
+        this.tone(784, 0.72, 0.45, 'triangle', 0.08);
+      }
+    };
+
+    function bindSoundUnlock() {
+      const unlock = () => Sound.unlock();
+      document.addEventListener('touchstart', unlock, { passive: true });
+      document.addEventListener('click', unlock);
+    }
+
+    function initConfigDraft() {
+      const s = state.settings;
+      configDraft = {
+        playerCount: s.playerCount,
+        defaultTarget: s.defaultTarget,
+        quickValues: [...s.quickValues],
+        players: s.players.map(p => ({ name: p.name, emoji: p.emoji }))
+      };
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('global-toast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function syncConfigDraftFromForm() {
+      if (!configDraft) initConfigDraft();
+      document.querySelectorAll('#view-config [data-action="cfg-name"]').forEach(input => {
+        const i = parseInt(input.dataset.index, 10);
+        if (configDraft.players[i]) configDraft.players[i].name = input.value.trim() || `Jugador ${i + 1}`;
+      });
+      const target = document.getElementById('cfg-target');
+      if (target) configDraft.defaultTarget = parseInt(target.value, 10) || DEFAULT_TARGET;
+    }
+
+    function saveConfigDraft() {
+      syncConfigDraftFromForm();
+
+      if (!configDraft.quickValues.length) {
+        alert('Agrega al menos un apunte rápido.');
+        return;
+      }
+
+      try {
+        state.settings = normalizeSettings({
+          playerCount: configDraft.playerCount,
+          defaultTarget: configDraft.defaultTarget,
+          quickValues: [...configDraft.quickValues],
+          players: configDraft.players.map(p => ({ ...p }))
+        });
+        saveState();
+        initConfigDraft();
+        showToast('✓ Configuración guardada');
+        renderConfigView();
+      } catch (err) {
+        alert('No se pudo guardar. Verifica que el navegador permita almacenamiento local.');
+      }
+    }
+
+    function getPlayerLines(game, playerId) {
+      return game.history
+        .filter(h => h.playerId === playerId)
+        .sort((a, b) => a.round - b.round)
+        .map(h => {
+          if (!h.id) h.id = uid();
+          return h;
+        });
+    }
+
+    function findHistoryEntry(game, entryId) {
+      return game.history.find(h => {
+        if (!h.id) h.id = uid();
+        return h.id === entryId;
+      });
+    }
+
+    function removeEntryFromUndo(game, entry) {
+      game.undoStack = game.undoStack.filter(u => {
+        const e = u.entry;
+        if (entry.id && e.id) return e.id !== entry.id;
+        return !(e.round === entry.round && e.playerId === entry.playerId &&
+          e.points === entry.points && e.timestamp === entry.timestamp);
+      });
+    }
+
+    function unfinishGameIfNeeded(game) {
+      if (!game.finished) return;
+
+      const stillWinner = game.players.some(p => p.score >= game.target);
+      if (stillWinner) return;
+
+      game.finished = false;
+      delete game.winnerId;
+      delete game.finishedAt;
+
+      const completedIdx = state.completedGames.findIndex(g => g.id === game.id);
+      if (completedIdx !== -1) {
+        const completed = state.completedGames.splice(completedIdx, 1)[0];
+        const winnerName = completed.winner.name;
+        if (state.playerStats[winnerName]) {
+          state.playerStats[winnerName].wins--;
+          if (state.playerStats[winnerName].wins <= 0) delete state.playerStats[winnerName];
+        }
+      }
+
+      hideVictoryModal();
+    }
+
+    function defaultPlayers(count) {
+      return Array.from({ length: count }, (_, i) => ({
+        name: `Jugador ${i + 1}`,
+        emoji: EMOJIS[i % EMOJIS.length]
+      }));
+    }
+
+    function defaultSettings() {
+      return {
+        playerCount: 2,
+        players: defaultPlayers(2),
+        defaultTarget: DEFAULT_TARGET,
+        quickValues: [...DEFAULT_QUICK]
+      };
+    }
+
+    function defaultState() {
+      return {
+        settings: defaultSettings(),
+        activeGame: null,
+        completedGames: [],
+        playerStats: {}
+      };
+    }
+
+    function normalizeSettings(raw) {
+      const base = defaultSettings();
+      const s = { ...base, ...raw };
+      const count = [2, 3, 4].includes(s.playerCount) ? s.playerCount : 2;
+      let players = Array.isArray(s.players) && s.players.length
+        ? s.players.map((p, i) => ({
+            name: p.name || `Jugador ${i + 1}`,
+            emoji: p.emoji || EMOJIS[i % EMOJIS.length]
+          }))
+        : defaultPlayers(count);
+
+      players = players.slice(0, count);
+      while (players.length < count) {
+        const i = players.length;
+        players.push({ name: `Jugador ${i + 1}`, emoji: EMOJIS[i % EMOJIS.length] });
+      }
+
+      const quickValues = Array.isArray(s.quickValues) && s.quickValues.length
+        ? [...s.quickValues].sort((a, b) => a - b)
+        : [...DEFAULT_QUICK];
+
+      return {
+        playerCount: count,
+        players,
+        defaultTarget: s.defaultTarget > 0 ? s.defaultTarget : DEFAULT_TARGET,
+        quickValues
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            ...defaultState(),
+            ...parsed,
+            settings: normalizeSettings(parsed.settings || {})
+          };
+        }
+      } catch (e) { /* ignore */ }
+      return defaultState();
+    }
+
+    function saveState() {
+      state.settings = normalizeSettings(state.settings);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn('localStorage no disponible', err);
+      }
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function drawDominoDot(ctx, cx, cy, radius) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function createDominoIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#13131A';
+      roundRect(ctx, 0, 0, size, size, size * 0.22);
+      ctx.fill();
+
+      const pad = size * 0.16;
+      const tileW = size - pad * 2;
+      const tileH = size - pad * 2;
+      const tileX = pad;
+      const tileY = pad;
+
+      ctx.fillStyle = '#F8FAFC';
+      roundRect(ctx, tileX, tileY, tileW, tileH, size * 0.07);
+      ctx.fill();
+
+      ctx.strokeStyle = '#0A0A0F';
+      ctx.lineWidth = Math.max(2, size * 0.02);
+      ctx.beginPath();
+      ctx.moveTo(size / 2, tileY + tileH * 0.08);
+      ctx.lineTo(size / 2, tileY + tileH * 0.92);
+      ctx.stroke();
+
+      ctx.fillStyle = '#0A0A0F';
+      const dotR = size * 0.052;
+      const leftX = tileX + tileW * 0.28;
+      const rightX = tileX + tileW * 0.72;
+      const topY = tileY + tileH * 0.28;
+      const midY = tileY + tileH * 0.5;
+      const bottomY = tileY + tileH * 0.72;
+
+      drawDominoDot(ctx, leftX, topY, dotR);
+      drawDominoDot(ctx, leftX, midY, dotR);
+      drawDominoDot(ctx, leftX, bottomY, dotR);
+      drawDominoDot(ctx, rightX, topY, dotR);
+      drawDominoDot(ctx, rightX, bottomY, dotR);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    function setupPWA() {
+      const icon180 = createDominoIcon(180);
+      const icon192 = createDominoIcon(192);
+      const icon512 = createDominoIcon(512);
+
+      function upsertLink(rel, href, extra) {
+        let link = document.querySelector(`link[rel="${rel}"]`);
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = rel;
+          document.head.appendChild(link);
+        }
+        link.href = href;
+        if (extra) Object.assign(link, extra);
+      }
+
+      upsertLink('apple-touch-icon', icon180);
+      upsertLink('icon', icon192, { type: 'image/png' });
+
+      const page = location.pathname.split('/').pop();
+      const startUrl = (!page || page === '') ? './' : './' + page;
+      const manifest = {
+        name: 'Dominó Tracker',
+        short_name: 'Dominó',
+        description: 'Apuntes de dominó offline',
+        start_url: startUrl,
+        scope: './',
+        display: 'standalone',
+        background_color: '#0A0A0F',
+        theme_color: '#0A0A0F',
+        orientation: 'portrait',
+        icons: [
+          { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ]
+      };
+
+      upsertLink('manifest', URL.createObjectURL(
+        new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' })
+      ));
+    }
+
+    function isInAppBrowser() {
+      const ua = navigator.userAgent || '';
+      if (/WhatsApp|Instagram|FBAN|FBAV|Twitter|Line\//i.test(ua)) return true;
+      if (/iPhone|iPad|iPod/.test(ua) && /AppleWebKit/.test(ua) && !/Safari|CriOS|FxiOS|EdgiOS|OPiOS/.test(ua)) return true;
+      return false;
+    }
+
+    function showEnvBanner(html) {
+      const banner = document.getElementById('env-banner');
+      if (!banner) return;
+      banner.innerHTML = html;
+      banner.classList.add('show');
+      document.body.classList.add('has-env-banner');
+    }
+
+    function checkEnvironment() {
+      if (location.protocol === 'file:') {
+        showEnvBanner(
+          '<strong>⚠️ No se puede usar como archivo suelto</strong>' +
+          'En iPhone/WhatsApp debes abrir un <em>enlace web https</em>, no el archivo .html adjunto. ' +
+          'Publica la app en internet (GitHub Pages, Netlify, etc.) y comparte ese link.'
+        );
+        return;
+      }
+
+      const ogUrl = document.querySelector('meta[property="og:url"]');
+      if (!ogUrl) {
+        const meta = document.createElement('meta');
+        meta.setAttribute('property', 'og:url');
+        meta.content = location.href.split('#')[0];
+        document.head.appendChild(meta);
+      } else {
+        ogUrl.content = location.href.split('#')[0];
+      }
+
+      if (isInAppBrowser()) {
+        showEnvBanner(
+          '<strong>Abrir en Safari</strong>' +
+          'WhatsApp usa un navegador limitado. Toca ⋯ (arriba a la derecha) → <em>Abrir en Safari</em> o <em>Abrir en navegador externo</em>.'
+        );
+      }
+    }
+
+    function saveSettings() {
+      state.settings = normalizeSettings(state.settings);
+      saveState();
+    }
+
+    function draftFromSettings() {
+      const s = state.settings;
+      return {
+        playerCount: s.playerCount,
+        target: s.defaultTarget,
+        quickValues: [...s.quickValues],
+        players: s.players.map((p, i) => ({
+          id: uid(),
+          name: p.name,
+          emoji: p.emoji || EMOJIS[i % EMOJIS.length]
+        }))
+      };
+    }
+
+    function applyPlayerCount(target, count, isSettings) {
+      target.playerCount = count;
+      const existing = target.players.slice(0, count).map((p, i) => {
+        const player = {
+          name: p.name || `Jugador ${i + 1}`,
+          emoji: p.emoji || EMOJIS[i % EMOJIS.length]
+        };
+        if (!isSettings) player.id = p.id || uid();
+        return player;
+      });
+      while (existing.length < count) {
+        const i = existing.length;
+        const player = { name: `Jugador ${i + 1}`, emoji: EMOJIS[i % EMOJIS.length] };
+        if (!isSettings) player.id = uid();
+        existing.push(player);
+      }
+      target.players = existing;
+      if (isSettings) saveSettings();
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getLeader(players) {
+      if (!players.length) return null;
+      return players.reduce((a, b) => (b.score > a.score ? b : a), players[0]);
+    }
+
+    function initSetupDraft() {
+      setupDraft = draftFromSettings();
+    }
+
+    function startGame(fromDraft) {
+      const game = {
+        id: uid(),
+        name: fromDraft.players.map(p => p.name).join(' vs '),
+        target: fromDraft.target,
+        quickValues: [...fromDraft.quickValues],
+        round: 1,
+        players: fromDraft.players.map(p => ({ ...p, score: 0 })),
+        history: [],
+        undoStack: [],
+        startedAt: new Date().toISOString(),
+        finished: false
+      };
+      state.activeGame = game;
+      selectedPlayerId = game.players[0].id;
+      saveState();
+      render();
+    }
+
+    function addPoints(playerId, points) {
+      const game = state.activeGame;
+      if (!game || game.finished || !points || points <= 0) return;
+
+      const player = game.players.find(p => p.id === playerId);
+      if (!player) return;
+
+      const prevScore = player.score;
+      player.score += points;
+
+      const entry = {
+        id: uid(),
+        round: game.round,
+        playerId,
+        playerName: player.name,
+        playerEmoji: player.emoji,
+        points,
+        prevScore,
+        timestamp: new Date().toISOString()
+      };
+
+      game.history.unshift(entry);
+      game.undoStack.push({ playerId, points, entry });
+      game.round++;
+
+      saveState();
+      const won = checkVictory();
+      if (!won) Sound.addPoints();
+      render();
+    }
+
+    function undoLast() {
+      const game = state.activeGame;
+      if (!game || !game.undoStack.length) return;
+
+      const last = game.undoStack.pop();
+      const player = game.players.find(p => p.id === last.playerId);
+      if (player) player.score -= last.points;
+
+      const idx = game.history.findIndex(h => h.id === last.entry.id);
+      if (idx !== -1) game.history.splice(idx, 1);
+      else {
+        const fallback = game.history.findIndex(h =>
+          h.round === last.entry.round &&
+          h.playerId === last.entry.playerId &&
+          h.points === last.entry.points &&
+          h.timestamp === last.entry.timestamp
+        );
+        if (fallback !== -1) game.history.splice(fallback, 1);
+      }
+
+      game.round = Math.max(1, game.round - 1);
+      unfinishGameIfNeeded(game);
+      Sound.removePoints();
+      saveState();
+      render();
+    }
+
+    function deleteEntry(entryId) {
+      const game = state.activeGame;
+      if (!game) return;
+
+      const entry = findHistoryEntry(game, entryId);
+      if (!entry) return;
+
+      const player = game.players.find(p => p.id === entry.playerId);
+      if (player) player.score -= entry.points;
+
+      game.history = game.history.filter(h => h.id !== entry.id);
+      removeEntryFromUndo(game, entry);
+      unfinishGameIfNeeded(game);
+      Sound.removePoints();
+      saveState();
+      render();
+    }
+
+    function checkVictory() {
+      const game = state.activeGame;
+      if (!game) return false;
+
+      const winner = game.players.find(p => p.score >= game.target);
+      if (winner && !game.finished) {
+        game.finished = true;
+        game.winnerId = winner.id;
+        game.finishedAt = new Date().toISOString();
+
+        const completed = {
+          id: game.id,
+          date: game.finishedAt,
+          target: game.target,
+          players: game.players.map(p => ({ name: p.name, emoji: p.emoji, score: p.score })),
+          winner: { name: winner.name, emoji: winner.emoji, score: winner.score },
+          rounds: game.history.length
+        };
+
+        state.completedGames.unshift(completed);
+
+        const key = winner.name;
+        if (!state.playerStats[key]) state.playerStats[key] = { wins: 0, emoji: winner.emoji };
+        state.playerStats[key].wins++;
+        state.playerStats[key].emoji = winner.emoji;
+
+        saveState();
+        showVictoryModal(winner);
+        return true;
+      }
+      return false;
+    }
+
+    function showVictoryModal(winner, playSound) {
+      if (playSound !== false) Sound.victory();
+      const modal = document.getElementById('victory-modal');
+      document.getElementById('modal-emoji').textContent = winner.emoji;
+      document.getElementById('modal-title').textContent = `¡${winner.name} gana!`;
+      document.getElementById('modal-sub').textContent = `${winner.score} puntos — meta alcanzada`;
+      spawnConfetti();
+      modal.classList.add('open');
+    }
+
+    function hideVictoryModal() {
+      document.getElementById('victory-modal').classList.remove('open');
+      document.getElementById('confetti-container').innerHTML = '';
+    }
+
+    function spawnConfetti() {
+      const container = document.getElementById('confetti-container');
+      container.innerHTML = '';
+      const colors = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#F8FAFC'];
+      for (let i = 0; i < 50; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+        piece.style.animationDelay = Math.random() * 0.5 + 's';
+        piece.style.width = (6 + Math.random() * 6) + 'px';
+        piece.style.height = (6 + Math.random() * 6) + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        container.appendChild(piece);
+      }
+    }
+
+    function revancha() {
+      hideVictoryModal();
+      state.activeGame = null;
+      setupDraft = null;
+      startGame(draftFromSettings());
+    }
+
+    function nuevaPartida() {
+      hideVictoryModal();
+      state.activeGame = null;
+      initSetupDraft();
+      currentTab = 'game';
+      saveState();
+      render();
+    }
+
+    function abandonGame() {
+      if (confirm('¿Abandonar la partida actual?')) {
+        state.activeGame = null;
+        initSetupDraft();
+        saveState();
+        render();
+      }
+    }
+
+    function deleteCompletedGame(id) {
+      if (confirm('¿Eliminar esta partida del historial?')) {
+        state.completedGames = state.completedGames.filter(g => g.id !== id);
+        saveState();
+        render();
+      }
+    }
+
+    function clearAllData() {
+      if (confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer.')) {
+        state = defaultState();
+        initSetupDraft();
+        initConfigDraft();
+        saveState();
+        render();
+      }
+    }
+
+    /* ─── RENDER ─── */
+
+    function render() {
+      renderNav();
+      renderGameView();
+      renderHistoryView();
+      renderConfigView();
+    }
+
+    function renderNav() {
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === currentTab);
+      });
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + currentTab).classList.add('active');
+    }
+
+    function renderGameView() {
+      const el = document.getElementById('view-game');
+      el.classList.toggle('has-input-dock', !!(state.activeGame && !setupDraft));
+      if (state.activeGame && !setupDraft) {
+        el.innerHTML = renderActiveGame();
+        bindGameEvents();
+      } else {
+        if (!setupDraft) initSetupDraft();
+        el.innerHTML = renderSetup();
+        bindSetupEvents();
+      }
+    }
+
+    function renderSetup() {
+      const d = setupDraft;
+      const playerFields = d.players.map((p, i) => `
+        <div class="player-setup" data-index="${i}">
+          <button type="button" class="emoji-toggle" data-action="toggle-emoji" data-index="${i}">${p.emoji}</button>
+          <input type="text" class="form-input" data-action="name" data-index="${i}" value="${escapeHtml(p.name)}" placeholder="Nombre">
+        </div>
+        <div class="emoji-picker" id="emoji-picker-${i}" style="display:none;margin-bottom:12px;">
+          ${EMOJIS.map(e => `<button type="button" class="emoji-btn ${e === p.emoji ? 'selected' : ''}" data-action="pick-emoji" data-index="${i}" data-emoji="${e}">${e}</button>`).join('')}
+        </div>
+      `).join('');
+
+      return `
+        <div class="header">
+          <div>
+            <h1>Nueva partida</h1>
+            <div class="header-meta">Basada en tu configuración guardada</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Jugadores / Equipos</div>
+          <div class="btn-group" style="margin-bottom:16px;">
+            ${[2, 3, 4].map(n => `<button type="button" class="btn btn-sm ${d.playerCount === n ? 'active' : ''}" data-action="count" data-count="${n}">${n}</button>`).join('')}
+          </div>
+          ${playerFields}
+        </div>
+
+        <div class="card">
+          <div class="card-title">Meta de puntos</div>
+          <input type="number" class="form-input" id="setup-target" value="${d.target}" min="1" max="9999" style="margin-bottom:12px;">
+          <div class="btn-group">
+            ${TARGET_PRESETS.map(t => `<button type="button" class="btn btn-sm ${d.target === t ? 'active' : ''}" data-action="target-preset" data-target="${t}">${t}</button>`).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Apuntes rápidos</div>
+          ${d.quickValues.map((v, i) => `
+            <div class="quick-value-row">
+              <span>+${v}</span>
+              <button type="button" class="btn-icon" data-action="remove-quick" data-index="${i}">×</button>
+            </div>
+          `).join('')}
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="number" class="form-input" id="new-quick-value" placeholder="Valor" min="1" max="999">
+            <button type="button" class="btn btn-sm" data-action="add-quick">+ Agregar</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+          <button type="button" class="btn btn-primary btn-block" data-action="start-game">Comenzar partida</button>
+          <button type="button" class="btn btn-block" data-action="restore-settings">↺ Restaurar configuración guardada</button>
+        </div>
+      `;
+    }
+
+    function renderActiveGame() {
+      const game = state.activeGame;
+      const leader = getLeader(game.players);
+      const cols = `cols-${game.players.length}`;
+
+      if (!selectedPlayerId) selectedPlayerId = game.players[0].id;
+      const selectedPlayer = game.players.find(p => p.id === selectedPlayerId) || game.players[0];
+
+      const columns = game.players.map(p => {
+        const pct = Math.min(100, (p.score / game.target) * 100);
+        const isLeader = p.id === leader.id && p.score > 0;
+        const isSelected = p.id === selectedPlayerId;
+        const lines = getPlayerLines(game, p.id).map(h =>
+          `<div class="score-line">
+            <span class="score-line-value">+${h.points}</span>
+            <button type="button" class="score-line-delete" data-action="delete-line" data-id="${h.id}" aria-label="Eliminar">×</button>
+          </div>`
+        ).join('');
+
+        return `
+          <div class="score-column ${isSelected ? 'selected' : ''} ${isLeader ? 'leading' : ''}" data-action="select-column" data-id="${p.id}">
+            <div class="score-col-header">
+              <span class="score-col-emoji">${p.emoji}</span>
+              <span class="score-col-name">${escapeHtml(p.name)}</span>
+            </div>
+            <div class="score-col-total">${p.score}</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="score-lines">${lines}</div>
+          </div>
+        `;
+      }).join('');
+
+      const quickBtns = game.quickValues.map(v =>
+        `<button type="button" class="dock-quick-btn" data-action="quick-add" data-points="${v}">+${v}</button>`
+      ).join('');
+
+      return `
+        <div class="header header-wrap">
+          <div style="flex:1;min-width:0;">
+            <h1>${escapeHtml(game.name)}</h1>
+            <div class="header-meta">Ronda ${game.round} · Meta: ${game.target}</div>
+          </div>
+          <button type="button" class="btn-icon" id="menu-btn">⋮</button>
+          <div class="dropdown" id="game-menu">
+            <button type="button" class="dropdown-item" data-action="revancha-menu">Revancha</button>
+            <button type="button" class="dropdown-item" data-action="new-game-menu">Nueva partida</button>
+            <button type="button" class="dropdown-item danger" data-action="abandon">Abandonar</button>
+          </div>
+        </div>
+
+        <div class="players-grid ${cols}">
+          ${columns}
+        </div>
+
+        <div class="input-dock">
+          <div class="dock-selected">Sumando a: <strong>${selectedPlayer.emoji} ${escapeHtml(selectedPlayer.name)}</strong></div>
+          <div class="dock-quick-btns">${quickBtns}</div>
+          <div class="dock-manual-row">
+            <input type="number" id="manual-points" placeholder="Ingresar monto" min="1" max="999" inputmode="numeric">
+            <button type="button" class="btn btn-primary" data-action="manual-add">Sumar</button>
+          </div>
+          <div class="dock-actions">
+            <button type="button" class="btn" data-action="undo" ${game.undoStack.length ? '' : 'disabled style="opacity:0.4"'}>↩ Deshacer</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHistoryView() {
+      const el = document.getElementById('view-history');
+      const stats = Object.entries(state.playerStats).sort((a, b) => b[1].wins - a[1].wins);
+
+      const statsHtml = stats.length ? `
+        <div class="section-title">Estadísticas</div>
+        <div class="stats-grid">
+          ${stats.map(([name, s]) => `
+            <div class="stat-card">
+              <div class="stat-emoji">${s.emoji || '🏆'}</div>
+              <div class="stat-name">${escapeHtml(name)}</div>
+              <div class="stat-wins">${s.wins} ${s.wins === 1 ? 'victoria' : 'victorias'}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="divider"></div>
+      ` : '';
+
+      const gamesHtml = state.completedGames.length ? state.completedGames.map(g => `
+        <div class="game-item">
+          <button type="button" class="game-item-delete" data-action="delete-game" data-id="${g.id}">×</button>
+          <div class="game-item-date">${formatDate(g.date)}</div>
+          <div class="game-item-winner">${g.winner.emoji} ${escapeHtml(g.winner.name)} — ${g.winner.score} pts</div>
+          <div class="game-item-scores">
+            ${g.players.map(p => `${p.emoji} ${escapeHtml(p.name)}: ${p.score}`).join(' · ')}
+          </div>
+        </div>
+      `).join('') : `
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>No hay partidas completadas</p>
+        </div>
+      `;
+
+      el.innerHTML = `
+        <div class="header"><h1>Historial</h1></div>
+        ${statsHtml}
+        <div class="section-title">Partidas (${state.completedGames.length})</div>
+        ${gamesHtml}
+      `;
+
+      el.querySelectorAll('[data-action="delete-game"]').forEach(btn => {
+        btn.addEventListener('click', () => deleteCompletedGame(btn.dataset.id));
+      });
+    }
+
+    function renderConfigView() {
+      const el = document.getElementById('view-config');
+      if (!configDraft) initConfigDraft();
+      const s = configDraft;
+
+      const playerFields = s.players.map((p, i) => `
+        <div class="player-setup" data-index="${i}">
+          <button type="button" class="emoji-toggle" data-action="cfg-toggle-emoji" data-index="${i}">${p.emoji}</button>
+          <input type="text" class="form-input" data-action="cfg-name" data-index="${i}" value="${escapeHtml(p.name)}" placeholder="Nombre">
+        </div>
+        <div class="emoji-picker" id="cfg-emoji-picker-${i}" style="display:none;margin-bottom:12px;">
+          ${EMOJIS.map(e => `<button type="button" class="emoji-btn ${e === p.emoji ? 'selected' : ''}" data-action="cfg-pick-emoji" data-index="${i}" data-emoji="${e}">${e}</button>`).join('')}
+        </div>
+      `).join('');
+
+      el.innerHTML = `
+        <div class="header">
+          <div>
+            <h1>Configuración</h1>
+            <div class="header-meta">Edita y pulsa Guardar para aplicar</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Jugadores / Equipos</div>
+          <div class="btn-group" style="margin-bottom:16px;">
+            ${[2, 3, 4].map(n => `<button type="button" class="btn btn-sm ${s.playerCount === n ? 'active' : ''}" data-action="cfg-count" data-count="${n}">${n}</button>`).join('')}
+          </div>
+          ${playerFields}
+        </div>
+
+        <div class="card">
+          <div class="card-title">Meta de puntos</div>
+          <input type="number" class="form-input" id="cfg-target" value="${s.defaultTarget}" min="1" max="9999" style="margin-bottom:12px;">
+          <div class="btn-group">
+            ${TARGET_PRESETS.map(t => `<button type="button" class="btn btn-sm ${s.defaultTarget === t ? 'active' : ''}" data-action="cfg-target" data-target="${t}">${t}</button>`).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Apuntes rápidos</div>
+          ${s.quickValues.map((v, i) => `
+            <div class="quick-value-row">
+              <span>+${v}</span>
+              <button type="button" class="btn-icon" data-action="cfg-remove-quick" data-index="${i}">×</button>
+            </div>
+          `).join('')}
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="number" class="form-input" id="cfg-new-quick" placeholder="Valor" min="1" max="999">
+            <button type="button" class="btn btn-sm" data-action="cfg-add-quick">+ Agregar</button>
+          </div>
+        </div>
+
+        <div class="config-save-bar">
+          <button type="button" class="btn btn-primary btn-block" id="cfg-save-btn" data-action="cfg-save">Guardar configuración</button>
+        </div>
+
+        <div class="card danger-zone">
+          <div class="card-title" style="color:var(--danger);">Zona peligrosa</div>
+          <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:12px;">Elimina todas las partidas, estadísticas y configuración.</p>
+          <button type="button" class="btn btn-danger btn-block" data-action="clear-all">Borrar todos los datos</button>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /* ─── EVENT BINDINGS ─── */
+
+    function bindSetupEvents() {
+      const el = document.getElementById('view-game');
+
+      el.querySelectorAll('[data-action="count"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyPlayerCount(setupDraft, parseInt(btn.dataset.count), false);
+          render();
+        });
+      });
+
+      el.querySelectorAll('[data-action="name"]').forEach(input => {
+        input.addEventListener('input', () => {
+          setupDraft.players[parseInt(input.dataset.index)].name = input.value;
+        });
+      });
+
+      el.querySelectorAll('[data-action="toggle-emoji"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const i = btn.dataset.index;
+          const picker = document.getElementById('emoji-picker-' + i);
+          const visible = picker.style.display !== 'none';
+          document.querySelectorAll('.emoji-picker').forEach(p => p.style.display = 'none');
+          picker.style.display = visible ? 'none' : 'flex';
+        });
+      });
+
+      el.querySelectorAll('[data-action="pick-emoji"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const i = parseInt(btn.dataset.index);
+          setupDraft.players[i].emoji = btn.dataset.emoji;
+          render();
+        });
+      });
+
+      el.querySelector('#setup-target').addEventListener('input', e => {
+        setupDraft.target = parseInt(e.target.value) || DEFAULT_TARGET;
+      });
+
+      el.querySelectorAll('[data-action="target-preset"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setupDraft.target = parseInt(btn.dataset.target);
+          render();
+        });
+      });
+
+      el.querySelector('[data-action="add-quick"]').addEventListener('click', () => {
+        const val = parseInt(document.getElementById('new-quick-value').value);
+        if (val > 0 && !setupDraft.quickValues.includes(val)) {
+          setupDraft.quickValues.push(val);
+          setupDraft.quickValues.sort((a, b) => a - b);
+          render();
+        }
+      });
+
+      el.querySelectorAll('[data-action="remove-quick"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setupDraft.quickValues.splice(parseInt(btn.dataset.index), 1);
+          render();
+        });
+      });
+
+      el.querySelector('[data-action="restore-settings"]').addEventListener('click', () => {
+        initSetupDraft();
+        render();
+      });
+
+      el.querySelector('[data-action="start-game"]').addEventListener('click', () => {
+        if (setupDraft.quickValues.length === 0) {
+          alert('Agrega al menos un apunte rápido.');
+          return;
+        }
+        setupDraft.target = parseInt(document.getElementById('setup-target').value) || DEFAULT_TARGET;
+        const draft = { ...setupDraft, players: setupDraft.players.map(p => ({ ...p })), quickValues: [...setupDraft.quickValues] };
+        setupDraft = null;
+        startGame(draft);
+      });
+    }
+
+    function bindGameEvents() {
+      const el = document.getElementById('view-game');
+
+      el.querySelectorAll('[data-action="select-column"]').forEach(col => {
+        col.addEventListener('click', e => {
+          if (e.target.closest('[data-action="delete-line"]')) return;
+          const nextId = col.dataset.id;
+          if (nextId !== selectedPlayerId) Sound.selectTeam();
+          selectedPlayerId = nextId;
+          render();
+        });
+      });
+
+      el.querySelectorAll('[data-action="delete-line"]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          deleteEntry(btn.dataset.id);
+        });
+      });
+
+      el.querySelectorAll('[data-action="quick-add"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          addPoints(selectedPlayerId, parseInt(btn.dataset.points));
+        });
+      });
+
+      el.querySelector('[data-action="manual-add"]')?.addEventListener('click', () => {
+        const input = document.getElementById('manual-points');
+        const pts = parseInt(input?.value);
+        if (pts > 0) {
+          addPoints(selectedPlayerId, pts);
+          input.value = '';
+        }
+      });
+
+      document.getElementById('manual-points')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') el.querySelector('[data-action="manual-add"]')?.click();
+      });
+
+      el.querySelector('[data-action="undo"]')?.addEventListener('click', undoLast);
+
+      const menuBtn = document.getElementById('menu-btn');
+      const menu = document.getElementById('game-menu');
+      menuBtn?.addEventListener('click', e => {
+        e.stopPropagation();
+        menuOpen = !menuOpen;
+        menu.classList.toggle('open', menuOpen);
+      });
+
+      el.querySelector('[data-action="revancha-menu"]')?.addEventListener('click', () => {
+        menuOpen = false;
+        revancha();
+      });
+
+      el.querySelector('[data-action="new-game-menu"]')?.addEventListener('click', () => {
+        menuOpen = false;
+        nuevaPartida();
+      });
+
+      el.querySelector('[data-action="abandon"]')?.addEventListener('click', () => {
+        menuOpen = false;
+        menu.classList.remove('open');
+        abandonGame();
+      });
+    }
+
+    function bindConfigEvents() {
+      const el = document.getElementById('view-config');
+      if (!el || el.dataset.bound) return;
+      el.dataset.bound = '1';
+
+      el.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn || !el.contains(btn)) return;
+
+        const action = btn.dataset.action;
+        if (!configDraft) initConfigDraft();
+
+        if (action === 'cfg-save') {
+          e.preventDefault();
+          saveConfigDraft();
+          return;
+        }
+
+        if (action === 'cfg-count') {
+          applyPlayerCount(configDraft, parseInt(btn.dataset.count, 10), false);
+          renderConfigView();
+          return;
+        }
+
+        if (action === 'cfg-toggle-emoji') {
+          const i = btn.dataset.index;
+          const picker = document.getElementById('cfg-emoji-picker-' + i);
+          const visible = picker && picker.style.display !== 'none';
+          el.querySelectorAll('.emoji-picker').forEach(p => { p.style.display = 'none'; });
+          if (picker) picker.style.display = visible ? 'none' : 'flex';
+          return;
+        }
+
+        if (action === 'cfg-pick-emoji') {
+          configDraft.players[parseInt(btn.dataset.index, 10)].emoji = btn.dataset.emoji;
+          renderConfigView();
+          return;
+        }
+
+        if (action === 'cfg-target') {
+          configDraft.defaultTarget = parseInt(btn.dataset.target, 10);
+          renderConfigView();
+          return;
+        }
+
+        if (action === 'cfg-add-quick') {
+          const val = parseInt(document.getElementById('cfg-new-quick')?.value, 10);
+          if (val > 0 && !configDraft.quickValues.includes(val)) {
+            configDraft.quickValues.push(val);
+            configDraft.quickValues.sort((a, b) => a - b);
+            renderConfigView();
+          }
+          return;
+        }
+
+        if (action === 'cfg-remove-quick') {
+          configDraft.quickValues.splice(parseInt(btn.dataset.index, 10), 1);
+          renderConfigView();
+          return;
+        }
+
+        if (action === 'clear-all') {
+          clearAllData();
+        }
+      });
+
+      el.addEventListener('input', e => {
+        if (!configDraft) initConfigDraft();
+        if (e.target.matches('[data-action="cfg-name"]')) {
+          configDraft.players[parseInt(e.target.dataset.index, 10)].name = e.target.value;
+        }
+        if (e.target.id === 'cfg-target') {
+          configDraft.defaultTarget = parseInt(e.target.value, 10) || DEFAULT_TARGET;
+        }
+      });
+    }
+
+    /* ─── NAV & GLOBAL ─── */
+
+    document.getElementById('bottom-nav').addEventListener('click', e => {
+      const btn = e.target.closest('.nav-item');
+      if (!btn) return;
+      currentTab = btn.dataset.tab;
+      if (currentTab === 'config' && !configDraft) initConfigDraft();
+      menuOpen = false;
+      render();
+    });
+
+    document.addEventListener('click', () => {
+      if (menuOpen) {
+        menuOpen = false;
+        document.getElementById('game-menu')?.classList.remove('open');
+      }
+    });
+
+    document.getElementById('btn-revancha').addEventListener('click', revancha);
+    document.getElementById('btn-nueva-partida').addEventListener('click', nuevaPartida);
+
+    /* ─── SERVICE WORKER ─── */
+
+    const SW_CODE = `
+      const CACHE_NAME = 'domino-tracker-v1';
+      const ASSETS = [self.location.href];
+
+      self.addEventListener('install', e => {
+        e.waitUntil(
+          caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+        );
+        self.skipWaiting();
+      });
+
+      self.addEventListener('activate', e => {
+        e.waitUntil(
+          caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+          )
+        );
+        self.clients.claim();
+      });
+
+      self.addEventListener('fetch', e => {
+        e.respondWith(
+          caches.match(e.request).then(cached => {
+            if (cached) return cached;
+            return fetch(e.request).then(response => {
+              if (response && response.status === 200 && e.request.method === 'GET') {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+              }
+              return response;
+            }).catch(() => cached);
+          })
+        );
+      });
+    `;
+
+    if ('serviceWorker' in navigator) {
+      const blob = new Blob([SW_CODE], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    }
+
+    /* ─── INIT ─── */
+
+    setupPWA();
+    checkEnvironment();
+    bindSoundUnlock();
+
+    if (state.activeGame) {
+      setupDraft = null;
+      selectedPlayerId = state.activeGame.players[0]?.id;
+      state.activeGame.history.forEach(h => { if (!h.id) h.id = uid(); });
+      saveState();
+      if (state.activeGame.finished) {
+        const winner = state.activeGame.players.find(p => p.id === state.activeGame.winnerId);
+        if (winner) setTimeout(() => showVictoryModal(winner, false), 300);
+      }
+    } else {
+      initSetupDraft();
+    }
+
+    bindConfigEvents();
+    render();
+  </script>
+</body>
+</html>
