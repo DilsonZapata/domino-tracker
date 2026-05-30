@@ -622,13 +622,12 @@
     }
 
     #view-game.has-input-dock {
-      padding-bottom: calc(220px + var(--safe-bottom));
+      padding-bottom: calc(168px + var(--safe-bottom));
     }
 
     .dock-manual-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 10px;
     }
 
     .dock-manual-row input {
@@ -646,13 +645,6 @@
     }
 
     .dock-manual-row input:focus { border-color: var(--accent); }
-
-    .dock-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .dock-actions .btn { flex: 1; }
 
     .progress-bar {
       height: 6px;
@@ -1077,6 +1069,59 @@
       margin-bottom: 8px;
     }
 
+    .header-badge-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .header-badge-row .page-badge {
+      margin-bottom: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .header-action-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(139, 92, 246, 0.18);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 0.9375rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--transition), background var(--transition), border-color var(--transition);
+      padding: 0;
+    }
+
+    .header-action-btn:active {
+      transform: scale(0.9);
+    }
+
+    .header-action-btn:hover {
+      background: var(--accent-soft);
+      border-color: rgba(139, 92, 246, 0.35);
+    }
+
+    .header-action-danger {
+      border-color: rgba(239, 68, 68, 0.18);
+    }
+
+    .header-action-danger:hover {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
     .header-wrap { position: relative; }
 
     .section-title {
@@ -1225,7 +1270,6 @@
     let selectedPlayerId = null;
     let setupDraft = null;
     let configDraft = null;
-    let menuOpen = false;
     let navMenuOpen = false;
     let pendingFx = null;
 
@@ -1402,15 +1446,6 @@
       return game.history.find(h => {
         if (!h.id) h.id = uid();
         return h.id === entryId;
-      });
-    }
-
-    function removeEntryFromUndo(game, entry) {
-      game.undoStack = game.undoStack.filter(u => {
-        const e = u.entry;
-        if (entry.id && e.id) return e.id !== entry.id;
-        return !(e.round === entry.round && e.playerId === entry.playerId &&
-          e.points === entry.points && e.timestamp === entry.timestamp);
       });
     }
 
@@ -1727,7 +1762,6 @@
         round: 1,
         players: fromDraft.players.map(p => ({ ...p, score: 0 })),
         history: [],
-        undoStack: [],
         startedAt: new Date().toISOString(),
         finished: false
       };
@@ -1759,7 +1793,6 @@
       };
 
       game.history.unshift(entry);
-      game.undoStack.push({ playerId, points, entry });
       game.round++;
 
       saveState();
@@ -1768,34 +1801,6 @@
         ? { type: 'win', playerId: game.winnerId }
         : { type: 'add', playerId, entryId: entry.id, points };
       if (!won) Sound.addPoints();
-      render();
-    }
-
-    function undoLast() {
-      const game = state.activeGame;
-      if (!game || !game.undoStack.length) return;
-
-      const last = game.undoStack.pop();
-      const player = game.players.find(p => p.id === last.playerId);
-      if (player) player.score -= last.points;
-
-      const idx = game.history.findIndex(h => h.id === last.entry.id);
-      if (idx !== -1) game.history.splice(idx, 1);
-      else {
-        const fallback = game.history.findIndex(h =>
-          h.round === last.entry.round &&
-          h.playerId === last.entry.playerId &&
-          h.points === last.entry.points &&
-          h.timestamp === last.entry.timestamp
-        );
-        if (fallback !== -1) game.history.splice(fallback, 1);
-      }
-
-      game.round = Math.max(1, game.round - 1);
-      unfinishGameIfNeeded(game);
-      pendingFx = { type: 'remove', playerId: last.playerId, points: last.points };
-      Sound.removePoints();
-      saveState();
       render();
     }
 
@@ -1810,7 +1815,6 @@
       if (player) player.score -= entry.points;
 
       game.history = game.history.filter(h => h.id !== entry.id);
-      removeEntryFromUndo(game, entry);
       unfinishGameIfNeeded(game);
       pendingFx = { type: 'remove', playerId: entry.playerId, points: entry.points };
       Sound.removePoints();
@@ -1930,6 +1934,21 @@
       state.activeGame = null;
       setupDraft = null;
       startGame(draftFromSettings());
+    }
+
+    function reiniciarPartida() {
+      const game = state.activeGame;
+      if (!game) return;
+      if (!confirm('¿Reiniciar puntajes? Se borran todos los apuntes de esta partida.')) return;
+      hideVictoryModal();
+      game.players.forEach(p => { p.score = 0; });
+      game.history = [];
+      game.round = 1;
+      game.finished = false;
+      delete game.winnerId;
+      delete game.finishedAt;
+      saveState();
+      render();
     }
 
     function nuevaPartida() {
@@ -2116,18 +2135,15 @@
 
       return `
         <div class="page-header header-wrap">
-          <div class="page-badge">Ronda ${game.round} · Meta ${game.target}</div>
-          <div style="display:flex;align-items:flex-start;gap:10px;">
-            <div style="flex:1;min-width:0;">
-              <h1>${escapeHtml(game.name)}</h1>
+          <div class="header-badge-row">
+            <div class="page-badge">Ronda ${game.round} · Meta ${game.target}</div>
+            <div class="header-actions" role="toolbar" aria-label="Acciones de partida">
+              <button type="button" class="header-action-btn" data-action="reiniciar" title="Reiniciar puntajes" aria-label="Reiniciar puntajes">🔄</button>
+              <button type="button" class="header-action-btn" data-action="revancha-menu" title="Revancha" aria-label="Revancha">🔁</button>
+              <button type="button" class="header-action-btn header-action-danger" data-action="abandon" title="Abandonar" aria-label="Abandonar partida">🚪</button>
             </div>
-            <button type="button" class="btn-icon" id="menu-btn">⋮</button>
           </div>
-          <div class="dropdown" id="game-menu">
-            <button type="button" class="dropdown-item" data-action="revancha-menu">Revancha</button>
-            <button type="button" class="dropdown-item" data-action="new-game-menu">Nueva partida</button>
-            <button type="button" class="dropdown-item danger" data-action="abandon">Abandonar</button>
-          </div>
+          <h1>${escapeHtml(game.name)}</h1>
         </div>
 
         <div class="players-grid ${cols}">
@@ -2140,9 +2156,6 @@
           <div class="dock-manual-row">
             <input type="number" id="manual-points" placeholder="Ingresar monto" min="1" max="999" inputmode="numeric">
             <button type="button" class="btn btn-primary" data-action="manual-add">Sumar</button>
-          </div>
-          <div class="dock-actions">
-            <button type="button" class="btn" data-action="undo" ${game.undoStack.length ? '' : 'disabled style="opacity:0.4"'}>↩ Deshacer</button>
           </div>
         </div>
       `;
@@ -2387,29 +2400,13 @@
         if (e.key === 'Enter') el.querySelector('[data-action="manual-add"]')?.click();
       });
 
-      el.querySelector('[data-action="undo"]')?.addEventListener('click', undoLast);
-
-      const menuBtn = document.getElementById('menu-btn');
-      const menu = document.getElementById('game-menu');
-      menuBtn?.addEventListener('click', e => {
-        e.stopPropagation();
-        menuOpen = !menuOpen;
-        menu.classList.toggle('open', menuOpen);
-      });
+      el.querySelector('[data-action="reiniciar"]')?.addEventListener('click', reiniciarPartida);
 
       el.querySelector('[data-action="revancha-menu"]')?.addEventListener('click', () => {
-        menuOpen = false;
         revancha();
       });
 
-      el.querySelector('[data-action="new-game-menu"]')?.addEventListener('click', () => {
-        menuOpen = false;
-        nuevaPartida();
-      });
-
       el.querySelector('[data-action="abandon"]')?.addEventListener('click', () => {
-        menuOpen = false;
-        menu.classList.remove('open');
         abandonGame();
       });
     }
@@ -2509,7 +2506,6 @@
       currentTab = btn.dataset.tab;
       if (currentTab === 'config' && !configDraft) initConfigDraft();
       navMenuOpen = false;
-      menuOpen = false;
       render();
     });
 
@@ -2517,10 +2513,6 @@
       if (navMenuOpen) {
         navMenuOpen = false;
         document.getElementById('bottom-nav')?.classList.remove('open');
-      }
-      if (menuOpen) {
-        menuOpen = false;
-        document.getElementById('game-menu')?.classList.remove('open');
       }
     });
 
