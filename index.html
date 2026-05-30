@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#0A0A0F">
+  <meta name="theme-color" content="#06060b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Dominó">
@@ -20,22 +20,31 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0A0A0F;
-      --surface: #13131A;
-      --surface-hover: #1A1A24;
-      --border: rgba(255, 255, 255, 0.08);
-      --accent: #7C3AED;
-      --accent-glow: rgba(124, 58, 237, 0.35);
-      --cyan: #06B6D4;
-      --success: #10B981;
-      --warning: #F59E0B;
-      --danger: #EF4444;
-      --text: #F8FAFC;
-      --text-muted: #94A3B8;
-      --radius: 14px;
-      --radius-sm: 10px;
-      --nav-height: 64px;
-      --transition: 200ms ease;
+      --bg: #06060b;
+      --bg-elevated: #0c0c14;
+      --surface: rgba(20, 20, 30, 0.72);
+      --surface-solid: #14141e;
+      --surface-hover: rgba(30, 30, 44, 0.9);
+      --border: rgba(255, 255, 255, 0.07);
+      --border-strong: rgba(255, 255, 255, 0.12);
+      --accent: #8B5CF6;
+      --accent-bright: #A78BFA;
+      --accent-glow: rgba(139, 92, 246, 0.4);
+      --accent-soft: rgba(139, 92, 246, 0.12);
+      --cyan: #22D3EE;
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+      --text: #F1F5F9;
+      --text-muted: #8B9CB3;
+      --radius: 16px;
+      --radius-sm: 12px;
+      --radius-xs: 8px;
+      --topbar-height: 56px;
+      --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+      --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --shadow-glow: 0 0 24px var(--accent-glow);
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-right: env(safe-area-inset-right, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -51,7 +60,11 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(ellipse 90% 60% at 50% -30%, rgba(139, 92, 246, 0.14), transparent 55%),
+        radial-gradient(ellipse 50% 40% at 100% 20%, rgba(34, 211, 238, 0.06), transparent),
+        radial-gradient(ellipse 40% 30% at 0% 80%, rgba(139, 92, 246, 0.05), transparent),
+        var(--bg);
       color: var(--text);
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
@@ -63,8 +76,103 @@
       display: flex;
       flex-direction: column;
       height: 100%;
-      max-width: 480px;
+      max-width: 520px;
       margin: 0 auto;
+    }
+
+    .app-topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: var(--topbar-height);
+      padding: 0 12px 0 8px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 6, 11, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 110;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-width: 52px;
+      height: 44px;
+      padding: 4px 8px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-xs);
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .nav-item .nav-icon {
+      font-size: 1.125rem;
+      line-height: 1;
+      transition: transform var(--transition);
+    }
+
+    .nav-item.active {
+      color: var(--accent-bright);
+      background: var(--accent-soft);
+      border-color: rgba(139, 92, 246, 0.25);
+    }
+
+    .nav-item:active { transform: scale(0.94); }
+    .nav-item.active .nav-icon { transform: scale(1.08); }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--accent), #6366F1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text), var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .app-content {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
 
     .view {
@@ -72,9 +180,9 @@
       overflow-y: auto;
       overflow-x: hidden;
       padding: 16px;
-      padding-bottom: calc(var(--nav-height) + 16px);
+      padding-bottom: 16px;
       display: none;
-      animation: fadeIn 0.25s ease;
+      animation: fadeIn 0.3s ease;
     }
 
     .view.active { display: block; }
@@ -130,19 +238,22 @@
     /* Cards */
     .card {
       background: var(--surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 12px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-sm);
     }
 
     .card-title {
-      font-size: 0.75rem;
-      font-weight: 600;
+      font-size: 0.6875rem;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       color: var(--text-muted);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     /* Player cards grid */
@@ -159,23 +270,27 @@
 
     .score-column {
       background: var(--surface);
-      border: 2px solid var(--border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid var(--border);
       border-radius: var(--radius);
-      padding: 10px 8px;
+      padding: 12px 10px;
       min-height: 120px;
       cursor: pointer;
-      transition: border-color var(--transition), box-shadow var(--transition);
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
       display: flex;
       flex-direction: column;
+      box-shadow: var(--shadow-sm);
     }
 
     .score-column.selected {
       border-color: var(--accent);
-      box-shadow: 0 0 16px var(--accent-glow);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-1px);
     }
 
     .score-column.leading:not(.selected) {
-      border-color: rgba(124, 58, 237, 0.45);
+      border-color: rgba(139, 92, 246, 0.35);
     }
 
     .score-col-header {
@@ -202,12 +317,17 @@
     .players-grid.cols-4 .score-col-name { font-size: 0.625rem; }
 
     .score-col-total {
-      font-size: 48px;
+      font-size: 44px;
       font-weight: 700;
       line-height: 1;
       text-align: center;
       font-variant-numeric: tabular-nums;
       margin-bottom: 8px;
+      letter-spacing: -0.03em;
+      background: linear-gradient(180deg, var(--text) 30%, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .players-grid.cols-3 .score-col-total { font-size: 36px; }
@@ -273,13 +393,17 @@
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      bottom: calc(var(--nav-height) + var(--safe-bottom));
-      width: 100%;
-      max-width: 480px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 12px 16px;
+      bottom: calc(8px + var(--safe-bottom));
+      width: calc(100% - 24px);
+      max-width: 496px;
+      background: rgba(14, 14, 22, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 14px 16px;
       z-index: 90;
+      box-shadow: var(--shadow-md);
     }
 
     .dock-quick-btns {
@@ -293,21 +417,43 @@
     .dock-quick-btn {
       min-width: 52px;
       padding: 10px 14px;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-xs);
       border: 1px solid var(--border);
-      background: var(--bg);
+      background: rgba(255, 255, 255, 0.04);
       color: var(--text);
       font-family: inherit;
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 0.9375rem;
+      font-weight: 700;
       cursor: pointer;
-      transition: transform var(--transition), background var(--transition);
+      transition: transform var(--transition), background var(--transition), border-color var(--transition);
     }
 
     .dock-quick-btn:active {
       transform: scale(0.96);
       background: var(--accent);
       border-color: var(--accent);
+      color: #fff;
+    }
+
+    .dock-selected {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .dock-selected strong {
+      color: var(--accent-bright);
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 0.875rem;
+    }
+
+    #view-game.has-input-dock {
+      padding-bottom: calc(220px + var(--safe-bottom));
     }
 
     .dock-manual-row {
@@ -320,9 +466,9 @@
       flex: 1;
       min-width: 0;
       padding: 12px 14px;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-xs);
       border: 1px solid var(--border);
-      background: var(--bg);
+      background: rgba(255, 255, 255, 0.04);
       color: var(--text);
       font-family: inherit;
       font-size: 1rem;
@@ -339,20 +485,6 @@
 
     .dock-actions .btn { flex: 1; }
 
-    .dock-selected {
-      text-align: center;
-      font-size: 0.8125rem;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-      font-weight: 500;
-    }
-
-    .dock-selected strong { color: var(--text); }
-
-    #view-game.has-input-dock {
-      padding-bottom: calc(var(--nav-height) + 240px + var(--safe-bottom));
-    }
-
     .progress-bar {
       height: 6px;
       background: rgba(255, 255, 255, 0.06);
@@ -364,8 +496,9 @@
       height: 100%;
       border-radius: 99px;
       background: linear-gradient(90deg, var(--accent), var(--cyan));
-      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
       min-width: 0;
+      box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
     }
 
     /* Buttons */
@@ -391,12 +524,13 @@
     .btn:hover { background: var(--surface-hover); }
 
     .btn-primary {
-      background: var(--accent);
-      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--accent), #6366F1);
+      border-color: transparent;
       color: #fff;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
     }
 
-    .btn-primary:hover { background: #6D28D9; }
+    .btn-primary:hover { background: linear-gradient(135deg, #7C3AED, #4F46E5); }
 
     .btn-danger {
       background: transparent;
@@ -579,11 +713,13 @@
     /* Completed games list */
     .game-item {
       background: var(--surface);
+      backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 16px;
       margin-bottom: 10px;
       position: relative;
+      box-shadow: var(--shadow-sm);
     }
 
     .game-item-date {
@@ -629,10 +765,12 @@
 
     .stat-card {
       background: var(--surface);
+      backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 14px;
+      padding: 16px;
       text-align: center;
+      box-shadow: var(--shadow-sm);
     }
 
     .stat-card .stat-emoji { font-size: 1.5rem; }
@@ -646,42 +784,6 @@
     }
 
     .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
-
-    /* Bottom nav */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: calc(var(--nav-height) + var(--safe-bottom));
-      padding-bottom: var(--safe-bottom);
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      z-index: 100;
-    }
-
-    .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-family: inherit;
-      font-size: 0.6875rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: color var(--transition);
-      padding: 8px;
-    }
-
-    .nav-item .nav-icon { font-size: 1.375rem; line-height: 1; }
-    .nav-item.active { color: var(--accent); }
-    .nav-item:active { transform: scale(0.96); }
 
     /* Modal */
     .modal-overlay {
@@ -700,16 +802,19 @@
     .modal-overlay.open { display: flex; }
 
     .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: rgba(20, 20, 32, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-strong);
       border-radius: var(--radius);
-      padding: 28px 24px;
+      padding: 32px 24px;
       text-align: center;
       max-width: 340px;
       width: 100%;
       position: relative;
       overflow: hidden;
       animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: var(--shadow-md), 0 0 60px rgba(139, 92, 246, 0.15);
     }
 
     @keyframes modalPop {
@@ -778,6 +883,31 @@
     .dropdown-item:hover, .dropdown-item:active { background: var(--surface-hover); }
     .dropdown-item.danger { color: var(--danger); }
 
+    .page-header {
+      margin-bottom: 18px;
+    }
+
+    .page-header h1 {
+      font-size: 1.375rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+    }
+
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--accent-bright);
+      margin-bottom: 8px;
+    }
+
     .header-wrap { position: relative; }
 
     .section-title {
@@ -812,7 +942,7 @@
     .global-toast {
       position: fixed;
       left: 50%;
-      bottom: calc(var(--nav-height) + 12px + var(--safe-bottom));
+      bottom: calc(16px + var(--safe-bottom));
       transform: translateX(-50%) translateY(120%);
       background: var(--success);
       color: #fff;
@@ -866,24 +996,31 @@
 <body>
   <div id="env-banner" class="env-banner" role="alert"></div>
   <div id="app">
-    <div id="view-game" class="view active"></div>
-    <div id="view-history" class="view"></div>
-    <div id="view-config" class="view"></div>
-
-    <nav class="bottom-nav" id="bottom-nav">
-      <button class="nav-item active" data-tab="game">
-        <span class="nav-icon">🎲</span>
-        <span>Juego</span>
-      </button>
-      <button class="nav-item" data-tab="history">
-        <span class="nav-icon">📋</span>
-        <span>Historial</span>
-      </button>
-      <button class="nav-item" data-tab="config">
-        <span class="nav-icon">⚙️</span>
-        <span>Config</span>
-      </button>
-    </nav>
+    <header class="app-topbar">
+      <nav class="top-nav" id="bottom-nav">
+        <button class="nav-item active" data-tab="game" type="button">
+          <span class="nav-icon">🎲</span>
+          <span>Juego</span>
+        </button>
+        <button class="nav-item" data-tab="history" type="button">
+          <span class="nav-icon">📋</span>
+          <span>Historial</span>
+        </button>
+        <button class="nav-item" data-tab="config" type="button">
+          <span class="nav-icon">⚙️</span>
+          <span>Config</span>
+        </button>
+      </nav>
+      <div class="topbar-brand">
+        <span class="brand-icon">🁫</span>
+        <span class="brand-text">Dominó</span>
+      </div>
+    </header>
+    <div class="app-content">
+      <div id="view-game" class="view active"></div>
+      <div id="view-history" class="view"></div>
+      <div id="view-config" class="view"></div>
+    </div>
     <div id="global-toast" class="global-toast" aria-live="polite"></div>
   </div>
 
@@ -977,12 +1114,41 @@
         this.sweep(420, 180, 0, 0.14, 0.11);
       },
 
+      clapBurst(startTime) {
+        if (!this.ctx) return;
+        const duration = 0.07 + Math.random() * 0.05;
+        const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.12));
+        }
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 700 + Math.random() * 1400;
+        filter.Q.value = 0.6 + Math.random() * 0.8;
+        const gain = this.ctx.createGain();
+        const vol = 0.18 + Math.random() * 0.14;
+        gain.gain.setValueAtTime(vol, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        source.start(startTime);
+      },
+
       victory() {
         this.unlock();
-        [523, 659, 784, 988, 1175].forEach((f, i) => {
-          this.tone(f, i * 0.13, 0.28, 'sine', 0.12);
-        });
-        this.tone(784, 0.72, 0.45, 'triangle', 0.08);
+        if (!this.ctx) return;
+        const t0 = this.ctx.currentTime;
+        for (let i = 0; i < 18; i++) {
+          this.clapBurst(t0 + Math.random() * 2.2);
+        }
+        for (let i = 0; i < 8; i++) {
+          this.clapBurst(t0 + 0.4 + i * 0.18 + Math.random() * 0.08);
+        }
       }
     };
 
@@ -1621,11 +1787,10 @@
       `).join('');
 
       return `
-        <div class="header">
-          <div>
-            <h1>Nueva partida</h1>
-            <div class="header-meta">Basada en tu configuración guardada</div>
-          </div>
+        <div class="page-header">
+          <div class="page-badge">Nueva partida</div>
+          <h1>Preparar mesa</h1>
+          <div class="header-meta">Basada en tu configuración guardada</div>
         </div>
 
         <div class="card">
@@ -1704,12 +1869,14 @@
       ).join('');
 
       return `
-        <div class="header header-wrap">
-          <div style="flex:1;min-width:0;">
-            <h1>${escapeHtml(game.name)}</h1>
-            <div class="header-meta">Ronda ${game.round} · Meta: ${game.target}</div>
+        <div class="page-header header-wrap">
+          <div class="page-badge">Ronda ${game.round} · Meta ${game.target}</div>
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <h1>${escapeHtml(game.name)}</h1>
+            </div>
+            <button type="button" class="btn-icon" id="menu-btn">⋮</button>
           </div>
-          <button type="button" class="btn-icon" id="menu-btn">⋮</button>
           <div class="dropdown" id="game-menu">
             <button type="button" class="dropdown-item" data-action="revancha-menu">Revancha</button>
             <button type="button" class="dropdown-item" data-action="new-game-menu">Nueva partida</button>
@@ -1770,7 +1937,10 @@
       `;
 
       el.innerHTML = `
-        <div class="header"><h1>Historial</h1></div>
+        <div class="page-header">
+          <div class="page-badge">Archivo</div>
+          <h1>Historial</h1>
+        </div>
         ${statsHtml}
         <div class="section-title">Partidas (${state.completedGames.length})</div>
         ${gamesHtml}
@@ -1797,11 +1967,10 @@
       `).join('');
 
       el.innerHTML = `
-        <div class="header">
-          <div>
-            <h1>Configuración</h1>
-            <div class="header-meta">Edita y pulsa Guardar para aplicar</div>
-          </div>
+        <div class="page-header">
+          <div class="page-badge">Ajustes</div>
+          <h1>Configuración</h1>
+          <div class="header-meta">Edita y pulsa Guardar para aplicar</div>
         </div>
 
         <div class="card">
