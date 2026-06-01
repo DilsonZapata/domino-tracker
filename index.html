@@ -99,62 +99,45 @@
       flex-shrink: 0;
     }
 
-    .top-nav {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
+    .nav-sheet-actions {
+      display: flex;
       flex-direction: column;
-      align-items: stretch;
-      min-width: 168px;
-      background: rgba(14, 14, 22, 0.97);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-sm);
-      padding: 6px;
-      box-shadow: var(--shadow-md);
-      z-index: 120;
-      gap: 2px;
+      gap: 10px;
+      margin: 16px 0 20px;
+      text-align: left;
     }
 
-    .top-nav.open { display: flex; }
-
-    .nav-item {
+    .nav-sheet-btn {
       display: flex;
-      flex-direction: row;
       align-items: center;
-      justify-content: flex-start;
-      gap: 10px;
+      gap: 14px;
       width: 100%;
-      min-width: 0;
-      height: auto;
-      padding: 12px 14px;
-      border: 1px solid transparent;
-      border-radius: var(--radius-xs);
-      background: transparent;
-      color: var(--text-muted);
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
       font-family: inherit;
-      font-size: 0.875rem;
+      font-size: 1.0625rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all var(--transition);
+      transition: transform var(--transition), background var(--transition), border-color var(--transition);
     }
 
-    .nav-item .nav-icon {
-      font-size: 1.125rem;
+    .nav-sheet-btn .nav-icon {
+      font-size: 1.5rem;
       line-height: 1;
-      width: 1.25rem;
+      width: 1.75rem;
       text-align: center;
     }
 
-    .nav-item.active {
+    .nav-sheet-btn.active {
       color: var(--accent-bright);
       background: var(--accent-soft);
-      border-color: rgba(139, 92, 246, 0.25);
+      border-color: rgba(139, 92, 246, 0.35);
     }
 
-    .nav-item:active { transform: scale(0.98); }
+    .nav-sheet-btn:active { transform: scale(0.98); }
 
     .topbar-brand {
       display: flex;
@@ -563,14 +546,14 @@
       left: 50%;
       transform: translateX(-50%);
       bottom: calc(8px + var(--safe-bottom));
-      width: calc(100% - 24px);
-      max-width: 496px;
-      background: rgba(14, 14, 22, 0.92);
+      width: calc(100% - 20px);
+      max-width: 520px;
+      background: rgba(14, 14, 22, 0.95);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius);
-      padding: 14px 16px;
+      padding: 18px 20px 22px;
       z-index: 90;
       box-shadow: var(--shadow-md);
     }
@@ -578,23 +561,24 @@
     .dock-quick-btns {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 10px;
+      margin-bottom: 14px;
       justify-content: center;
     }
 
     .dock-quick-btn {
-      min-width: 52px;
-      padding: 10px 14px;
+      min-width: 68px;
+      padding: 14px 18px;
       border-radius: var(--radius-xs);
       border: 1px solid var(--border);
       background: rgba(255, 255, 255, 0.04);
       color: var(--text);
       font-family: inherit;
-      font-size: 0.9375rem;
+      font-size: 1.3125rem;
       font-weight: 700;
       cursor: pointer;
       transition: transform var(--transition), background var(--transition), border-color var(--transition);
+      font-variant-numeric: tabular-nums;
     }
 
     .dock-quick-btn:active {
@@ -606,10 +590,10 @@
 
     .dock-selected {
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--text-muted);
-      margin-bottom: 10px;
-      font-weight: 500;
+      margin-bottom: 14px;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -618,33 +602,44 @@
       color: var(--accent-bright);
       text-transform: none;
       letter-spacing: normal;
-      font-size: 0.875rem;
+      font-size: 1.125rem;
     }
 
     #view-game.has-input-dock {
-      padding-bottom: calc(168px + var(--safe-bottom));
+      padding-bottom: calc(240px + var(--safe-bottom));
     }
 
     .dock-manual-row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
+      align-items: stretch;
     }
 
     .dock-manual-row input {
       flex: 1;
       min-width: 0;
-      padding: 12px 14px;
+      padding: 16px 18px;
       border-radius: var(--radius-xs);
       border: 1px solid var(--border);
       background: rgba(255, 255, 255, 0.04);
       color: var(--text);
       font-family: inherit;
-      font-size: 1rem;
-      font-weight: 500;
+      font-size: 1.5rem;
+      font-weight: 700;
       outline: none;
+      font-variant-numeric: tabular-nums;
     }
 
     .dock-manual-row input:focus { border-color: var(--accent); }
+
+    .dock-manual-row .btn-sum {
+      flex-shrink: 0;
+      min-width: 108px;
+      padding: 16px 20px;
+      font-size: 1.125rem;
+      font-weight: 700;
+      border-radius: var(--radius-xs);
+    }
 
     .progress-bar {
       height: 6px;
@@ -988,6 +983,27 @@
     .modal-sub { color: var(--text-muted); margin-bottom: 24px; font-size: 0.9375rem; }
     .modal-actions { display: flex; flex-direction: column; gap: 10px; }
 
+    .confirm-modal {
+      max-width: 340px;
+      text-align: center;
+    }
+
+    .confirm-icon {
+      font-size: 2.75rem;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .nav-sheet-modal {
+      max-width: 360px;
+      text-align: left;
+    }
+
+    .nav-sheet-modal .modal-title {
+      text-align: center;
+      margin-bottom: 0;
+    }
+
     /* Confetti */
     .confetti-container {
       position: absolute;
@@ -1084,17 +1100,17 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-shrink: 0;
     }
 
     .header-action-btn {
-      width: 32px;
-      height: 32px;
-      border: 1px solid rgba(139, 92, 246, 0.18);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      font-size: 0.9375rem;
+      width: 48px;
+      height: 48px;
+      border: 1px solid rgba(139, 92, 246, 0.22);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 1.375rem;
       line-height: 1;
       cursor: pointer;
       display: flex;
@@ -1213,20 +1229,6 @@
     <header class="app-topbar">
       <div class="topbar-left">
         <button type="button" class="btn-icon" id="nav-menu-btn" aria-label="Menú">⋮</button>
-        <nav class="top-nav" id="bottom-nav">
-          <button class="nav-item active" data-tab="game" type="button">
-            <span class="nav-icon">🎲</span>
-            <span>Juego</span>
-          </button>
-          <button class="nav-item" data-tab="history" type="button">
-            <span class="nav-icon">📋</span>
-            <span>Historial</span>
-          </button>
-          <button class="nav-item" data-tab="config" type="button">
-            <span class="nav-icon">⚙️</span>
-            <span>Config</span>
-          </button>
-        </nav>
       </div>
       <div class="topbar-brand">
         <span class="brand-icon">🁫</span>
@@ -1242,6 +1244,39 @@
   </div>
 
   <div id="fx-flash" aria-hidden="true"></div>
+
+  <div id="nav-dialog" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="nav-dialog-title">
+    <div class="modal nav-sheet-modal">
+      <div class="modal-title" id="nav-dialog-title">Ir a</div>
+      <div class="nav-sheet-actions" id="nav-sheet-actions">
+        <button type="button" class="nav-sheet-btn" data-tab="game">
+          <span class="nav-icon">🎲</span>
+          <span>Juego</span>
+        </button>
+        <button type="button" class="nav-sheet-btn" data-tab="history">
+          <span class="nav-icon">📋</span>
+          <span>Historial</span>
+        </button>
+        <button type="button" class="nav-sheet-btn" data-tab="config">
+          <span class="nav-icon">⚙️</span>
+          <span>Configuración</span>
+        </button>
+      </div>
+      <button type="button" class="btn btn-block" id="nav-dialog-close">Cerrar</button>
+    </div>
+  </div>
+
+  <div id="confirm-dialog" class="modal-overlay" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal confirm-modal">
+      <div class="confirm-icon" id="confirm-icon" aria-hidden="true"></div>
+      <div class="modal-title" id="confirm-title"></div>
+      <div class="modal-sub" id="confirm-message"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary btn-block" id="confirm-ok">Confirmar</button>
+        <button type="button" class="btn btn-block" id="confirm-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
   <div id="victory-modal" class="modal-overlay">
     <div class="modal">
@@ -1270,7 +1305,7 @@
     let selectedPlayerId = null;
     let setupDraft = null;
     let configDraft = null;
-    let navMenuOpen = false;
+    let navDialogOpen = false;
     let pendingFx = null;
 
     const Sound = {
@@ -1936,19 +1971,84 @@
       startGame(draftFromSettings());
     }
 
+    function showConfirmDialog(opts) {
+      return new Promise(resolve => {
+        const dialog = document.getElementById('confirm-dialog');
+        const okBtn = document.getElementById('confirm-ok');
+        const cancelBtn = document.getElementById('confirm-cancel');
+        document.getElementById('confirm-icon').textContent = opts.icon || '⚠️';
+        document.getElementById('confirm-title').textContent = opts.title || '¿Confirmar?';
+        document.getElementById('confirm-message').textContent = opts.message || '';
+        okBtn.textContent = opts.confirmLabel || 'Confirmar';
+        cancelBtn.textContent = opts.cancelLabel || 'Cancelar';
+        okBtn.className = opts.danger
+          ? 'btn btn-danger btn-block'
+          : 'btn btn-primary btn-block';
+
+        const finish = (value) => {
+          dialog.classList.remove('open');
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          dialog.removeEventListener('click', onBackdrop);
+          resolve(value);
+        };
+        const onOk = () => finish(true);
+        const onCancel = () => finish(false);
+        const onBackdrop = (e) => {
+          if (e.target === dialog) finish(false);
+        };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        dialog.addEventListener('click', onBackdrop);
+        dialog.classList.add('open');
+      });
+    }
+
+    function openNavDialog() {
+      navDialogOpen = true;
+      document.querySelectorAll('.nav-sheet-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === currentTab);
+      });
+      document.getElementById('nav-dialog').classList.add('open');
+    }
+
+    function closeNavDialog() {
+      navDialogOpen = false;
+      document.getElementById('nav-dialog').classList.remove('open');
+    }
+
     function reiniciarPartida() {
       const game = state.activeGame;
       if (!game) return;
-      if (!confirm('¿Reiniciar puntajes? Se borran todos los apuntes de esta partida.')) return;
-      hideVictoryModal();
-      game.players.forEach(p => { p.score = 0; });
-      game.history = [];
-      game.round = 1;
-      game.finished = false;
-      delete game.winnerId;
-      delete game.finishedAt;
-      saveState();
-      render();
+      showConfirmDialog({
+        icon: '🔄',
+        title: 'Reiniciar puntajes',
+        message: 'Se borran todos los apuntes de esta partida. Los jugadores y la meta se mantienen.',
+        confirmLabel: 'Reiniciar'
+      }).then(ok => {
+        if (!ok) return;
+        hideVictoryModal();
+        game.players.forEach(p => { p.score = 0; });
+        game.history = [];
+        game.round = 1;
+        game.finished = false;
+        delete game.winnerId;
+        delete game.finishedAt;
+        saveState();
+        render();
+      });
+    }
+
+    function promptRevancha() {
+      showConfirmDialog({
+        icon: '🔁',
+        title: 'Revancha',
+        message: 'Nueva partida con los mismos jugadores de tu configuración guardada.',
+        confirmLabel: 'Jugar revancha'
+      }).then(ok => {
+        if (ok) revancha();
+      });
     }
 
     function nuevaPartida() {
@@ -1961,30 +2061,51 @@
     }
 
     function abandonGame() {
-      if (confirm('¿Abandonar la partida actual?')) {
+      showConfirmDialog({
+        icon: '🚪',
+        title: 'Abandonar partida',
+        message: 'Saldrás de la partida actual sin guardarla en el historial.',
+        confirmLabel: 'Abandonar',
+        danger: true
+      }).then(ok => {
+        if (!ok) return;
         state.activeGame = null;
         initSetupDraft();
         saveState();
         render();
-      }
+      });
     }
 
     function deleteCompletedGame(id) {
-      if (confirm('¿Eliminar esta partida del historial?')) {
+      showConfirmDialog({
+        icon: '🗑️',
+        title: 'Eliminar partida',
+        message: 'Se quitará esta partida del historial.',
+        confirmLabel: 'Eliminar',
+        danger: true
+      }).then(ok => {
+        if (!ok) return;
         state.completedGames = state.completedGames.filter(g => g.id !== id);
         saveState();
         render();
-      }
+      });
     }
 
     function clearAllData() {
-      if (confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer.')) {
+      showConfirmDialog({
+        icon: '⚠️',
+        title: 'Borrar todos los datos',
+        message: 'Se eliminarán partidas, estadísticas y configuración. Esta acción no se puede deshacer.',
+        confirmLabel: 'Borrar todo',
+        danger: true
+      }).then(ok => {
+        if (!ok) return;
         state = defaultState();
         initSetupDraft();
         initConfigDraft();
         saveState();
         render();
-      }
+      });
     }
 
     /* ─── RENDER ─── */
@@ -1997,12 +2118,14 @@
     }
 
     function renderNav() {
-      document.querySelectorAll('.nav-item').forEach(btn => {
+      document.querySelectorAll('.nav-sheet-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === currentTab);
       });
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.getElementById('view-' + currentTab).classList.add('active');
-      document.getElementById('bottom-nav')?.classList.toggle('open', navMenuOpen);
+      if (navDialogOpen) {
+        document.getElementById('nav-dialog')?.classList.add('open');
+      }
     }
 
     function renderQuickAddRow(prefix, values, addAction) {
@@ -2155,7 +2278,7 @@
           <div class="dock-quick-btns">${quickBtns}</div>
           <div class="dock-manual-row">
             <input type="number" id="manual-points" placeholder="Ingresar monto" min="1" max="999" inputmode="numeric">
-            <button type="button" class="btn btn-primary" data-action="manual-add">Sumar</button>
+            <button type="button" class="btn btn-primary btn-sum" data-action="manual-add">Sumar</button>
           </div>
         </div>
       `;
@@ -2403,7 +2526,7 @@
       el.querySelector('[data-action="reiniciar"]')?.addEventListener('click', reiniciarPartida);
 
       el.querySelector('[data-action="revancha-menu"]')?.addEventListener('click', () => {
-        revancha();
+        promptRevancha();
       });
 
       el.querySelector('[data-action="abandon"]')?.addEventListener('click', () => {
@@ -2496,24 +2619,23 @@
 
     document.getElementById('nav-menu-btn').addEventListener('click', e => {
       e.stopPropagation();
-      navMenuOpen = !navMenuOpen;
-      document.getElementById('bottom-nav')?.classList.toggle('open', navMenuOpen);
+      if (navDialogOpen) closeNavDialog();
+      else openNavDialog();
     });
 
-    document.getElementById('bottom-nav').addEventListener('click', e => {
-      const btn = e.target.closest('.nav-item');
+    document.getElementById('nav-dialog-close').addEventListener('click', closeNavDialog);
+
+    document.getElementById('nav-sheet-actions').addEventListener('click', e => {
+      const btn = e.target.closest('.nav-sheet-btn');
       if (!btn) return;
       currentTab = btn.dataset.tab;
       if (currentTab === 'config' && !configDraft) initConfigDraft();
-      navMenuOpen = false;
+      closeNavDialog();
       render();
     });
 
-    document.addEventListener('click', () => {
-      if (navMenuOpen) {
-        navMenuOpen = false;
-        document.getElementById('bottom-nav')?.classList.remove('open');
-      }
+    document.getElementById('nav-dialog').addEventListener('click', e => {
+      if (e.target.id === 'nav-dialog') closeNavDialog();
     });
 
     document.getElementById('btn-revancha').addEventListener('click', revancha);
