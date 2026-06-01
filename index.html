@@ -94,9 +94,29 @@
       z-index: 110;
     }
 
-    .topbar-left {
-      position: relative;
-      flex-shrink: 0;
+    .topbar-start {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .topbar-game-title {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0;
+      min-width: 0;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .topbar-game-title[hidden] {
+      display: none;
     }
 
     .nav-sheet-actions {
@@ -1224,8 +1244,9 @@
   <div id="env-banner" class="env-banner" role="alert"></div>
   <div id="app">
     <header class="app-topbar">
-      <div class="topbar-left">
+      <div class="topbar-start">
         <button type="button" class="btn-icon" id="nav-menu-btn" aria-label="Menú">⋮</button>
+        <h1 class="topbar-game-title" id="topbar-game-title" hidden></h1>
       </div>
       <div class="topbar-brand">
         <span class="brand-icon">🁫</span>
@@ -2123,6 +2144,21 @@
       if (navDialogOpen) {
         document.getElementById('nav-dialog')?.classList.add('open');
       }
+      updateTopbarTitle();
+    }
+
+    function updateTopbarTitle() {
+      const titleEl = document.getElementById('topbar-game-title');
+      if (!titleEl) return;
+      const game = state.activeGame;
+      const show = game && !setupDraft && currentTab === 'game';
+      if (show) {
+        titleEl.textContent = game.name;
+        titleEl.hidden = false;
+      } else {
+        titleEl.textContent = '';
+        titleEl.hidden = true;
+      }
     }
 
     function renderQuickAddRow(prefix, values, addAction) {
@@ -2263,7 +2299,6 @@
               <button type="button" class="header-action-btn header-action-danger" data-action="abandon" title="Abandonar" aria-label="Abandonar partida">🚪</button>
             </div>
           </div>
-          <h1>${escapeHtml(game.name)}</h1>
         </div>
 
         <div class="players-grid ${cols}">
