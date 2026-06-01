@@ -465,27 +465,35 @@
       border-color: rgba(139, 92, 246, 0.35);
     }
 
-    .score-col-header {
+    .score-col-top {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 2px;
+      justify-content: center;
+      gap: 10px;
       margin-bottom: 6px;
     }
 
     .score-col-emoji {
-      font-size: 2.375rem;
+      font-size: 3rem;
       line-height: 1;
-      display: block;
+      display: inline-block;
+      flex: 0 0 auto;
     }
 
-    .players-grid.cols-3 .score-col-emoji { font-size: 2.125rem; }
-    .players-grid.cols-4 .score-col-emoji { font-size: 1.875rem; }
+    .players-grid.cols-3 .score-col-emoji { font-size: 2.5rem; }
+    .players-grid.cols-4 .score-col-emoji { font-size: 2.125rem; }
 
     .player-emoji {
       font-size: 1.75rem;
       line-height: 1;
       vertical-align: middle;
+    }
+
+    .score-col-total-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
     }
 
     .score-col-name {
@@ -2428,11 +2436,13 @@
 
         return `
           <div class="score-column${colFx} ${isSelected ? 'selected' : ''} ${isLeader ? 'leading' : ''}" data-action="select-column" data-id="${p.id}">
-            <div class="score-col-header">
+            <div class="score-col-top">
               <span class="score-col-emoji">${p.emoji}</span>
-              <span class="score-col-name">${escapeHtml(p.name)}</span>
+              <div class="score-col-total-wrap">
+                <div class="score-col-total${totalFx}">${p.score}</div>
+                <div class="score-col-name">${escapeHtml(p.name)}</div>
+              </div>
             </div>
-            <div class="score-col-total${totalFx}">${p.score}</div>
             <div class="progress-bar">
               <div class="progress-fill${barFx}" style="width:${pct}%"></div>
             </div>
