@@ -933,15 +933,17 @@
       position: absolute;
       top: 12px;
       right: 12px;
-      width: 32px;
-      height: 32px;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
       border: none;
-      background: transparent;
+      background: rgba(239, 68, 68, 0.08);
       color: var(--danger);
-      font-size: 1.125rem;
+      font-size: 1.25rem;
       cursor: pointer;
       border-radius: 8px;
       transition: background var(--transition);
+      touch-action: manipulation;
     }
 
     .game-item-delete:active { transform: scale(0.96); background: rgba(239, 68, 68, 0.1); }
@@ -990,6 +992,8 @@
     }
 
     .modal-overlay.open { display: flex; }
+
+    #confirm-dialog { z-index: 250; }
 
     .modal {
       background: rgba(20, 20, 32, 0.95);
@@ -1666,27 +1670,52 @@
       };
     }
 
+    function normalizeLoadedState(parsed) {
+      const base = defaultState();
+      const completedGames = Array.isArray(parsed.completedGames) ? parsed.completedGames : [];
+      completedGames.forEach(g => {
+        if (!g.id) g.id = uid();
+      });
+      const playerStats = parsed.playerStats && typeof parsed.playerStats === 'object'
+        ? parsed.playerStats
+        : {};
+      return {
+        settings: normalizeSettings(parsed.settings || {}),
+        activeGame: parsed.activeGame ?? null,
+        completedGames,
+        playerStats
+      };
+    }
+
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
-          const parsed = JSON.parse(raw);
-          return {
-            ...defaultState(),
-            ...parsed,
-            settings: normalizeSettings(parsed.settings || {})
-          };
+          return normalizeLoadedState(JSON.parse(raw));
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.warn('Error al cargar datos guardados', e);
+      }
       return defaultState();
     }
 
     function saveState() {
-      state.settings = normalizeSettings(state.settings);
+      const snapshot = {
+        settings: normalizeSettings(state.settings),
+        activeGame: state.activeGame,
+        completedGames: Array.isArray(state.completedGames) ? state.completedGames : [],
+        playerStats: state.playerStats && typeof state.playerStats === 'object' ? state.playerStats : {}
+      };
+      state.settings = snapshot.settings;
+      state.completedGames = snapshot.completedGames;
+      state.playerStats = snapshot.playerStats;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        return true;
       } catch (err) {
         console.warn('localStorage no disponible', err);
+        showToast('No se pudo guardar en este dispositivo');
+        return false;
       }
     }
 
@@ -2075,9 +2104,16 @@
       startGame(draftFromSettings());
     }
 
+    let confirmDialogOpen = false;
+
     function showConfirmDialog(opts) {
       return new Promise(resolve => {
+        if (confirmDialogOpen) {
+          resolve(false);
+          return;
+        }
         const dialog = document.getElementById('confirm-dialog');
+        const panel = dialog.querySelector('.modal');
         const okBtn = document.getElementById('confirm-ok');
         const cancelBtn = document.getElementById('confirm-cancel');
         document.getElementById('confirm-icon').textContent = opts.icon || '⚠️';
@@ -2089,23 +2125,43 @@
           ? 'btn btn-danger btn-block'
           : 'btn btn-primary btn-block';
 
+        confirmDialogOpen = true;
+        let backdropReady = false;
+
         const finish = (value) => {
+          if (!confirmDialogOpen) return;
+          confirmDialogOpen = false;
           dialog.classList.remove('open');
           okBtn.removeEventListener('click', onOk);
           cancelBtn.removeEventListener('click', onCancel);
           dialog.removeEventListener('click', onBackdrop);
+          panel?.removeEventListener('click', stopPanelBubble);
           resolve(value);
         };
-        const onOk = () => finish(true);
-        const onCancel = () => finish(false);
+        const onOk = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          finish(true);
+        };
+        const onCancel = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          finish(false);
+        };
         const onBackdrop = (e) => {
+          if (!backdropReady) return;
           if (e.target === dialog) finish(false);
         };
+        const stopPanelBubble = (e) => e.stopPropagation();
 
         okBtn.addEventListener('click', onOk);
         cancelBtn.addEventListener('click', onCancel);
-        dialog.addEventListener('click', onBackdrop);
+        panel?.addEventListener('click', stopPanelBubble);
         dialog.classList.add('open');
+        setTimeout(() => {
+          backdropReady = true;
+          dialog.addEventListener('click', onBackdrop);
+        }, 320);
       });
     }
 
@@ -2181,6 +2237,7 @@
     }
 
     function deleteCompletedGame(id) {
+      if (!id) return;
       showConfirmDialog({
         icon: '🗑️',
         title: 'Eliminar partida',
@@ -2189,9 +2246,13 @@
         danger: true
       }).then(ok => {
         if (!ok) return;
-        state.completedGames = state.completedGames.filter(g => g.id !== id);
-        saveState();
-        render();
+        const before = state.completedGames.length;
+        state.completedGames = state.completedGames.filter(g => String(g.id) !== String(id));
+        if (state.completedGames.length === before) return;
+        if (saveState()) {
+          showToast('Partida eliminada');
+          render();
+        }
       });
     }
 
@@ -2204,11 +2265,20 @@
         danger: true
       }).then(ok => {
         if (!ok) return;
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (_) { /* ignore */ }
         state = defaultState();
+        setupDraft = null;
+        configDraft = null;
+        selectedPlayerId = null;
         initSetupDraft();
         initConfigDraft();
-        saveState();
-        render();
+        if (saveState()) {
+          showToast('Datos borrados');
+          currentTab = 'game';
+          render();
+        }
       });
     }
 
@@ -2445,10 +2515,6 @@
         <div class="section-title">Partidas (${state.completedGames.length})</div>
         ${gamesHtml}
       `;
-
-      el.querySelectorAll('[data-action="delete-game"]').forEach(btn => {
-        btn.addEventListener('click', () => deleteCompletedGame(btn.dataset.id));
-      });
     }
 
     function renderConfigView() {
@@ -2652,6 +2718,19 @@
       });
     }
 
+    function bindHistoryEvents() {
+      const el = document.getElementById('view-history');
+      if (!el || el.dataset.bound) return;
+      el.dataset.bound = '1';
+      el.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action="delete-game"]');
+        if (!btn || !el.contains(btn)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        deleteCompletedGame(btn.dataset.id);
+      });
+    }
+
     function bindConfigEvents() {
       const el = document.getElementById('view-config');
       if (!el || el.dataset.bound) return;
@@ -2718,7 +2797,10 @@
         }
 
         if (action === 'clear-all') {
+          e.preventDefault();
+          e.stopPropagation();
           clearAllData();
+          return;
         }
       });
 
@@ -2762,13 +2844,9 @@
     /* ─── SERVICE WORKER ─── */
 
     const SW_CODE = `
-      const CACHE_NAME = 'domino-tracker-v1';
-      const ASSETS = [self.location.href];
+      const CACHE_NAME = 'domino-tracker-v2';
 
       self.addEventListener('install', e => {
-        e.waitUntil(
-          caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-        );
         self.skipWaiting();
       });
 
@@ -2782,11 +2860,25 @@
       });
 
       self.addEventListener('fetch', e => {
+        if (e.request.method !== 'GET') return;
+        const isDoc = e.request.mode === 'navigate' ||
+          e.request.destination === 'document' ||
+          (e.request.headers.get('accept') || '').includes('text/html');
+        if (isDoc) {
+          e.respondWith(
+            fetch(e.request).then(res => {
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+              return res;
+            }).catch(() => caches.match(e.request))
+          );
+          return;
+        }
         e.respondWith(
           caches.match(e.request).then(cached => {
             if (cached) return cached;
             return fetch(e.request).then(response => {
-              if (response && response.status === 200 && e.request.method === 'GET') {
+              if (response && response.status === 200) {
                 const clone = response.clone();
                 caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
               }
@@ -2812,8 +2904,14 @@
     if (state.activeGame) {
       setupDraft = null;
       selectedPlayerId = state.activeGame.players[0]?.id;
-      state.activeGame.history.forEach(h => { if (!h.id) h.id = uid(); });
-      saveState();
+      let migrated = false;
+      state.activeGame.history.forEach(h => {
+        if (!h.id) {
+          h.id = uid();
+          migrated = true;
+        }
+      });
+      if (migrated) saveState();
       if (state.activeGame.finished) {
         const winner = state.activeGame.players.find(p => p.id === state.activeGame.winnerId);
         if (winner) setTimeout(() => showVictoryModal(winner, false), 300);
@@ -2822,6 +2920,7 @@
       initSetupDraft();
     }
 
+    bindHistoryEvents();
     bindConfigEvents();
     render();
   </script>
