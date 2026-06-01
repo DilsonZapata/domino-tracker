@@ -473,7 +473,20 @@
       margin-bottom: 6px;
     }
 
-    .score-col-emoji { font-size: 1.5rem; line-height: 1; }
+    .score-col-emoji {
+      font-size: 2.375rem;
+      line-height: 1;
+      display: block;
+    }
+
+    .players-grid.cols-3 .score-col-emoji { font-size: 2.125rem; }
+    .players-grid.cols-4 .score-col-emoji { font-size: 1.875rem; }
+
+    .player-emoji {
+      font-size: 1.75rem;
+      line-height: 1;
+      vertical-align: middle;
+    }
 
     .score-col-name {
       font-size: 0.6875rem;
@@ -777,12 +790,12 @@
     }
 
     .emoji-btn {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border-radius: var(--radius-sm);
       border: 2px solid var(--border);
       background: var(--bg);
-      font-size: 1.25rem;
+      font-size: 1.625rem;
       cursor: pointer;
       transition: all var(--transition);
       display: flex;
@@ -798,12 +811,12 @@
     .emoji-btn:active { transform: scale(0.96); }
 
     .emoji-toggle {
-      width: 44px;
-      height: 44px;
+      width: 52px;
+      height: 52px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: var(--bg);
-      font-size: 1.5rem;
+      font-size: 2rem;
       cursor: pointer;
       flex-shrink: 0;
     }
@@ -903,14 +916,18 @@
 
     .game-item-winner {
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 1.0625rem;
       margin-bottom: 4px;
     }
 
+    .game-item-winner .player-emoji { font-size: 1.5rem; }
+
     .game-item-scores {
-      font-size: 0.8125rem;
+      font-size: 0.9375rem;
       color: var(--text-muted);
     }
+
+    .game-item-scores .player-emoji { font-size: 1.25rem; }
 
     .game-item-delete {
       position: absolute;
@@ -946,7 +963,7 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .stat-card .stat-emoji { font-size: 1.5rem; }
+    .stat-card .stat-emoji { font-size: 2.25rem; line-height: 1; }
     .stat-card .stat-name { font-size: 0.8125rem; color: var(--text-muted); margin: 4px 0; }
     .stat-card .stat-wins { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
 
@@ -995,7 +1012,7 @@
       to { opacity: 1; transform: scale(1); }
     }
 
-    .modal-emoji { font-size: 4rem; margin-bottom: 8px; }
+    .modal-emoji { font-size: 5.5rem; margin-bottom: 8px; line-height: 1; }
     .modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
     .modal-sub { color: var(--text-muted); margin-bottom: 24px; font-size: 0.9375rem; }
     .modal-actions { display: flex; flex-direction: column; gap: 10px; }
@@ -1328,68 +1345,133 @@
 
     const Sound = {
       ctx: null,
+      master: null,
       unlocked: false,
+      _readyPromise: null,
+
+      initContext() {
+        if (this.ctx) return;
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        this.ctx = new Ctx();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.92;
+        this.master.connect(this.ctx.destination);
+      },
+
+      playSilentUnlock() {
+        if (!this.ctx) return;
+        try {
+          const buffer = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+          const source = this.ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(this.ctx.destination);
+          source.start(0);
+        } catch (_) { /* ignore */ }
+      },
+
+      ready() {
+        this.initContext();
+        if (!this.ctx) return Promise.resolve(false);
+        this.playSilentUnlock();
+        if (this.ctx.state === 'running') {
+          this.unlocked = true;
+          return Promise.resolve(true);
+        }
+        if (!this._readyPromise) {
+          this._readyPromise = this.ctx.resume()
+            .then(() => {
+              this.unlocked = true;
+              this.playSilentUnlock();
+              return true;
+            })
+            .catch(() => false)
+            .finally(() => { this._readyPromise = null; });
+        }
+        return this._readyPromise;
+      },
 
       unlock() {
-        if (!this.ctx) {
-          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.ready();
+      },
+
+      out() {
+        return this.master || this.ctx?.destination;
+      },
+
+      play(fn) {
+        if (this.ctx?.state === 'running') {
+          fn();
+          return;
         }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-        this.unlocked = true;
+        this.ready().then(ok => {
+          if (ok && this.ctx?.state === 'running') fn();
+        });
       },
 
       tone(freq, delay, duration, type, volume) {
-        if (!this.ctx) return;
+        if (!this.ctx || !this.out()) return;
         const t = this.ctx.currentTime + delay;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = type || 'sine';
+        osc.type = type || 'triangle';
         osc.frequency.setValueAtTime(freq, t);
-        gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(volume || 0.14, t + 0.012);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        const peak = volume || 0.35;
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.exponentialRampToValueAtTime(peak, t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.out());
         osc.start(t);
-        osc.stop(t + duration + 0.04);
+        osc.stop(t + duration + 0.05);
       },
 
       sweep(startFreq, endFreq, delay, duration, volume) {
-        if (!this.ctx) return;
+        if (!this.ctx || !this.out()) return;
         const t = this.ctx.currentTime + delay;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sine';
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(startFreq, t);
-        osc.frequency.exponentialRampToValueAtTime(endFreq, t + duration);
-        gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(volume || 0.1, t + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(endFreq, 1), t + duration);
+        const peak = volume || 0.32;
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.exponentialRampToValueAtTime(peak, t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.out());
         osc.start(t);
-        osc.stop(t + duration + 0.04);
+        osc.stop(t + duration + 0.05);
+      },
+
+      _selectTeam() {
+        this.tone(880, 0, 0.07, 'triangle', 0.28);
+        this.tone(1100, 0.03, 0.06, 'triangle', 0.2);
       },
 
       selectTeam() {
-        this.unlock();
-        this.tone(880, 0, 0.06, 'sine', 0.08);
-        this.tone(1100, 0.03, 0.05, 'sine', 0.05);
+        this.play(() => this._selectTeam());
+      },
+
+      _addPoints() {
+        this.tone(520, 0, 0.09, 'triangle', 0.42);
+        this.tone(780, 0.04, 0.11, 'triangle', 0.34);
       },
 
       addPoints() {
-        this.unlock();
-        this.tone(520, 0, 0.08, 'sine', 0.13);
-        this.tone(780, 0.04, 0.1, 'sine', 0.1);
+        this.play(() => this._addPoints());
+      },
+
+      _removePoints() {
+        this.sweep(420, 180, 0, 0.16, 0.38);
       },
 
       removePoints() {
-        this.unlock();
-        this.sweep(420, 180, 0, 0.14, 0.11);
+        this.play(() => this._removePoints());
       },
 
       clapBurst(startTime) {
-        if (!this.ctx) return;
+        if (!this.ctx || !this.out()) return;
         const duration = 0.07 + Math.random() * 0.05;
         const bufferSize = Math.floor(this.ctx.sampleRate * duration);
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -1404,17 +1486,16 @@
         filter.frequency.value = 700 + Math.random() * 1400;
         filter.Q.value = 0.6 + Math.random() * 0.8;
         const gain = this.ctx.createGain();
-        const vol = 0.18 + Math.random() * 0.14;
+        const vol = 0.45 + Math.random() * 0.25;
         gain.gain.setValueAtTime(vol, startTime);
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
         source.connect(filter);
         filter.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.out());
         source.start(startTime);
       },
 
-      victory() {
-        this.unlock();
+      _victory() {
         if (!this.ctx) return;
         const t0 = this.ctx.currentTime;
         for (let i = 0; i < 18; i++) {
@@ -1423,13 +1504,18 @@
         for (let i = 0; i < 8; i++) {
           this.clapBurst(t0 + 0.4 + i * 0.18 + Math.random() * 0.08);
         }
+      },
+
+      victory() {
+        this.play(() => this._victory());
       }
     };
 
     function bindSoundUnlock() {
       const unlock = () => Sound.unlock();
-      document.addEventListener('touchstart', unlock, { passive: true });
-      document.addEventListener('click', unlock);
+      document.addEventListener('pointerdown', unlock, { capture: true, passive: true });
+      document.addEventListener('touchend', unlock, { capture: true, passive: true });
+      document.addEventListener('click', unlock, { capture: true });
     }
 
     function initConfigDraft() {
@@ -2306,7 +2392,7 @@
         </div>
 
         <div class="input-dock">
-          <div class="dock-selected">Sumando a: <strong>${selectedPlayer.emoji} ${escapeHtml(selectedPlayer.name)}</strong></div>
+          <div class="dock-selected">Sumando a: <strong><span class="player-emoji">${selectedPlayer.emoji}</span> ${escapeHtml(selectedPlayer.name)}</strong></div>
           <div class="dock-quick-btns">${quickBtns}</div>
           <div class="dock-manual-row">
             <input type="number" id="manual-points" placeholder="Ingresar monto" min="1" max="999" inputmode="numeric">
@@ -2338,9 +2424,9 @@
         <div class="game-item">
           <button type="button" class="game-item-delete" data-action="delete-game" data-id="${g.id}">×</button>
           <div class="game-item-date">${formatDate(g.date)}</div>
-          <div class="game-item-winner">${g.winner.emoji} ${escapeHtml(g.winner.name)} — ${g.winner.score} pts</div>
+          <div class="game-item-winner"><span class="player-emoji">${g.winner.emoji}</span> ${escapeHtml(g.winner.name)} — ${g.winner.score} pts</div>
           <div class="game-item-scores">
-            ${g.players.map(p => `${p.emoji} ${escapeHtml(p.name)}: ${p.score}`).join(' · ')}
+            ${g.players.map(p => `<span class="player-emoji">${p.emoji}</span> ${escapeHtml(p.name)}: ${p.score}`).join(' · ')}
           </div>
         </div>
       `).join('') : `
