@@ -293,6 +293,7 @@
     .score-column {
       position: relative;
       overflow: hidden;
+      container-type: inline-size;
       background: var(--surface);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
@@ -469,19 +470,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: clamp(4px, 4cqi, 12px);
       margin-bottom: 6px;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .score-col-emoji {
-      font-size: 3rem;
+      font-size: clamp(1.6rem, 26cqi, 3rem);
       line-height: 1;
-      display: inline-block;
       flex: 0 0 auto;
     }
-
-    .players-grid.cols-3 .score-col-emoji { font-size: 2.5rem; }
-    .players-grid.cols-4 .score-col-emoji { font-size: 2.125rem; }
 
     .player-emoji {
       font-size: 1.75rem;
@@ -494,10 +493,11 @@
       flex-direction: column;
       align-items: center;
       gap: 2px;
+      min-width: 0;
     }
 
     .score-col-name {
-      font-size: 0.6875rem;
+      font-size: clamp(0.625rem, 7cqi, 0.75rem);
       font-weight: 600;
       color: var(--text-muted);
       text-align: center;
@@ -507,24 +507,18 @@
       max-width: 100%;
     }
 
-    .players-grid.cols-4 .score-col-name { font-size: 0.625rem; }
-
     .score-col-total {
-      font-size: 44px;
+      font-size: clamp(1.75rem, 34cqi, 44px);
       font-weight: 700;
       line-height: 1;
       text-align: center;
       font-variant-numeric: tabular-nums;
-      margin-bottom: 8px;
       letter-spacing: -0.03em;
       background: linear-gradient(180deg, var(--text) 30%, var(--text-muted));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-
-    .players-grid.cols-3 .score-col-total { font-size: 36px; }
-    .players-grid.cols-4 .score-col-total { font-size: 28px; }
 
     .score-column .progress-bar { margin-bottom: 10px; }
 
@@ -584,19 +578,21 @@
 
     .input-dock {
       position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: calc(8px + var(--safe-bottom));
-      width: calc(100% - 24px);
-      max-width: 496px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
       background: rgba(14, 14, 22, 0.92);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--border-strong);
-      border-radius: var(--radius);
-      padding: 15px 17px;
+      border-bottom: none;
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 14px 16px calc(14px + var(--safe-bottom));
       z-index: 90;
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
     }
 
     .dock-quick-btns {
@@ -647,7 +643,7 @@
     }
 
     #view-game.has-input-dock {
-      padding-bottom: calc(169px + var(--safe-bottom));
+      padding-bottom: var(--dock-space, calc(180px + var(--safe-bottom)));
     }
 
     .dock-manual-row {
@@ -2678,6 +2674,20 @@
       });
     }
 
+    function updateDockSpacing() {
+      const el = document.getElementById('view-game');
+      if (!el) return;
+      const dock = el.querySelector('.input-dock');
+      if (dock) {
+        el.style.setProperty('--dock-space', (dock.offsetHeight + 16) + 'px');
+      } else {
+        el.style.removeProperty('--dock-space');
+      }
+    }
+
+    window.addEventListener('resize', updateDockSpacing);
+    window.addEventListener('orientationchange', updateDockSpacing);
+
     function bindGameEvents() {
       const el = document.getElementById('view-game');
 
@@ -2726,6 +2736,8 @@
       el.querySelector('[data-action="abandon"]')?.addEventListener('click', () => {
         abandonGame();
       });
+
+      requestAnimationFrame(updateDockSpacing);
     }
 
     function bindHistoryEvents() {
